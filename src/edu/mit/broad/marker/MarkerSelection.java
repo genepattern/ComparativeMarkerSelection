@@ -378,6 +378,52 @@ public class MarkerSelection {
 			_ranks = Util.rank(descendingAbsIndices);
 		}
 
+      // write p values to temporary file
+      PrintWriter tempFileWriter = null;
+      String tempFileName = "pvalues.txt";
+      new File(tempFileName).deleteOnExit();
+      try {
+         tempFileWriter = new PrintWriter(new FileWriter(tempFileName));
+         for(int i = 0; i < N; i++) {
+            tempFileWriter.println(geneSpecificPValues[descendingIndices[i]]);
+         }
+      } catch(IOException ioe) {
+         AnalysisUtil.exit("An error occurred while saving the output file.", ioe);
+      } finally {
+         if(tempFileWriter!=null) {
+            tempFileWriter.close();
+         }
+      }
+     
+      edu.mit.broad.marker.qvalue.QValue.qvalue(tempFileName);
+      String[] qvalues = new String[N];
+      int qvalueHeaderLines = 4;
+      String[] qvalueHeaders = new String[qvalueHeaderLines];
+      BufferedReader br = null;
+      String qvalueOutputFileName = "qvalues.txt";
+      new File(qvalueOutputFileName).deleteOnExit();
+      try {
+         br = new BufferedReader(new FileReader(qvalueOutputFileName));
+         for(int i = 0; i < qvalueHeaderLines; i++) {
+            qvalueHeaders[i] = br.readLine();  
+         }
+         for(int i = 0; i < N; i++) {
+            qvalues[i] = br.readLine();  
+         }
+      } catch(IOException ioe) {
+         AnalysisUtil.exit("An error occurred while saving the output file.", ioe);
+      } finally {
+         if(br!=null) {
+            try {
+             br.close();  
+            } catch(IOException x) {
+            }
+         }
+      }
+      
+      
+      // read in results from qvalue
+      
 		PrintWriter pw = null;
 
 		try {
@@ -417,7 +463,10 @@ public class MarkerSelection {
          }
 
 			pw.println("Fix Standard Deviation=" + fixStdev);
-
+         for(int i = 0; i < qvalueHeaderLines; i++) {
+            pw.println(qvalueHeaders[i]);  
+         }
+         pw.println("DataLines="+N);
 			for(int i = 0; i < N; i++) {
 				int index = descendingIndices[i];
 
@@ -427,7 +476,7 @@ public class MarkerSelection {
 				}
 				double bonferroni = Math.min(geneSpecificPValues[index] * N, 1.0);
 				pw.println(rank + "\t" + dataset.getRowName(index) + "\t" +
-						scores[index] + "\t" + geneSpecificPValues[index] + "\t " + fpr[index] + "\t" + fwer[index] + "\t" + rankBasedPValues[i] + "\t" + fdr[index] + "\t" + bonferroni);
+						scores[index] + "\t" + geneSpecificPValues[index] + "\t " + fpr[index] + "\t" + fwer[index] + "\t" + rankBasedPValues[i] + "\t" + fdr[index] + "\t" + bonferroni + "\t" + qvalues[i]);
 			}
 			
 		} catch(Exception e) {
@@ -442,7 +491,7 @@ public class MarkerSelection {
 				}
 			}
 		}
-		edu.mit.broad.marker.qvalue.QValue.qvalue(outputFileName);
+		
       if(debugger!=null) {
          debugger.print();  
       }

@@ -1,17 +1,9 @@
 compute.qvalue <- function(input.file) {
-	header.lines <- 15
-	odf <- readLines(input.file, n=header.lines)
-	values <- read.table(input.file, sep="\t", row.names=1, skip=header.lines, colClasses=c("integer", "character", rep(c("real"), 7)))
-  
-   on.exit(unlink('tmp.txt')) # lazy way of getting the same values if read in data again from output file
-   write.table(values, "tmp.txt", sep="\t", col.names=FALSE, quote=FALSE, append=FALSE)
-   values <- read.table("tmp.txt", sep="\t", row.names=1, skip=0,
-   colClasses=c("integer", "character", rep(c("double"), 7))) 
+	values <- read.table(input.file, sep="\t", row.names=NULL, colClasses="real")
+   output.file <- 'qvalues.txt'
    
-	result <- qvalue(p=values[,3])
+	result <- qvalue(p=values[,1])
 	qvalues <- result$qvalues
-	values <- cbind(values, qvalues)
-	write(odf, input.file)
 	
 	lambda <- result$lambda
 	
@@ -22,23 +14,22 @@ compute.qvalue <- function(input.file) {
    }
    spi0 <- smooth.spline(lambda, pi0, df = 3)
    
-   cat("pi0=", sep='', file=input.file, append=TRUE)
-   cat(result$pi0, sep=' ', file=input.file, append=TRUE)
-   cat("\n", sep='', file=input.file, append=TRUE)
+   cat("pi0=", sep='', file=output.file, append=TRUE)
+   cat(result$pi0, sep=' ', file=output.file, append=TRUE)
+   cat("\n", sep='', file=output.file, append=TRUE)
    
-   cat("lambda=", sep='', file=input.file, append=TRUE)
-   cat(lambda, sep=" ", file=input.file, append=TRUE)
-   cat("\n", sep='', file=input.file, append=TRUE)
+   cat("lambda=", sep='', file=output.file, append=TRUE)
+   cat(lambda, sep=" ", file=output.file, append=TRUE)
+   cat("\n", sep='', file=output.file, append=TRUE)
    
-   cat("pi0(lambda)=", sep='', file=input.file, append=TRUE)
-   cat(pi0, sep=' ', file=input.file, append=TRUE)
-   cat("\n", sep='', file=input.file, append=TRUE)
+   cat("pi0(lambda)=", sep='', file=output.file, append=TRUE)
+   cat(pi0, sep=' ', file=output.file, append=TRUE)
+   cat("\n", sep='', file=output.file, append=TRUE)
    
-   cat("cubic spline(lambda)=", sep='', file=input.file, append=TRUE)
-   cat(spi0$y, sep=' ', file=input.file, append=TRUE)
-   cat("\n", sep='', file=input.file, append=TRUE)
-   write(paste("DataLines=",NROW(values), sep=''), input.file, append=TRUE)
-	write.table(values, input.file, sep="\t", col.names=FALSE, quote=FALSE, append=TRUE)
+   cat("cubic spline(lambda)=", sep='', file=output.file, append=TRUE)
+   cat(spi0$y, sep=' ', file=output.file, append=TRUE)
+   cat("\n", sep='', file=output.file, append=TRUE)
+   write.table(qvalues, output.file, sep="\t", col.names=FALSE, quote=FALSE, append=TRUE, row.names=FALSE)
 }
 
         

@@ -74,16 +74,19 @@ public class MarkerSelection {
    /**  Covariate assignments */
    ClassVector covariate;
 
+   /** Seed for generating permutations */
+   int seed;
    static Debugger debugger;
 
 
    public MarkerSelection(String datasetFile, String clsFile,
          int _numPermutations, int _side,
          String _outputFileName, boolean _balanced,
-         boolean complete, boolean fixStdev, int metric, double minStd) {
+         boolean complete, boolean fixStdev, int metric, double minStd, int seed) {
       this.datasetFile = datasetFile;
       this.clsFile = clsFile;
       this.minStd = minStd;
+      this.seed = seed;
       IExpressionDataReader reader = AnalysisUtil.getExpressionReader(datasetFile);
       ExpressionData expressionData = (ExpressionData) AnalysisUtil.readExpressionData(reader, datasetFile, new ExpressionDataCreator());
 
@@ -169,15 +172,20 @@ public class MarkerSelection {
       boolean complete = Boolean.valueOf(args[6]).booleanValue();
       boolean fixStdevev = Boolean.valueOf(args[7]).booleanValue();
       int metric = Integer.parseInt(args[8]);
+      int seed = 4357;
       double minStd = -1;
-      if(args.length == 10) {
-         minStd = Double.parseDouble(args[9]);
+      for(int i = 9; i < args.length; i++) {
+         if(args[i].equals("-s")) {
+            seed = Integer.parseInt(args[++i]);
+         } else if(args[i].equals("-m")) {
+            minStd = Double.parseDouble(args[++i]);
+         } 
       }
-
+   
       new MarkerSelection(datasetFile,
             clsFile,
             _numPermutations, testDirection, outputFileName, balanced,
-            complete, fixStdevev, metric, minStd);
+            complete, fixStdevev, metric, minStd, seed);
    }
 
 
@@ -211,9 +219,9 @@ public class MarkerSelection {
             AnalysisUtil.exit("Covariate permuter not yet implemented for complete or balanced permutations.");
          }
       } else if(!complete && balanced) {
-         permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices);
+         permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices, seed);
       } else if(!complete && !balanced) {
-         permuter = new UnbalancedRandomPermuter(classVector.size(), classVector.getIndices(1).length);
+         permuter = new UnbalancedRandomPermuter(classVector.size(), classVector.getIndices(1).length, seed);
       } else if(complete && !balanced) {
          permuter = new UnbalancedCompletePermuter(classVector.size(),
                classZeroIndices.length);
@@ -223,7 +231,7 @@ public class MarkerSelection {
          }
          numPermutations = totalPermutations.intValue();
       } else if(complete && balanced) {
-         permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices);
+         permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices, seed);
          java.math.BigInteger totalPermutations = ((BalancedCompletePermuter) (permuter)).getTotal();
          if((totalPermutations.compareTo(new java.math.BigInteger("" + Integer.MAX_VALUE))) == 1) {
             AnalysisUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);

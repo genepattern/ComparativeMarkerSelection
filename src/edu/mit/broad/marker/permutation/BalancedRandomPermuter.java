@@ -9,12 +9,12 @@ public class BalancedRandomPermuter implements Permuter {
 	cern.jet.random.engine.MersenneTwister random;
 
 
-	public BalancedRandomPermuter(int[] classZeroIndices, int[] classOneIndices) {
+	public BalancedRandomPermuter(int[] classZeroIndices, int[] classOneIndices, int seed) {
 
 		this.classZeroIndices = classZeroIndices;
 		this.classOneIndices = classOneIndices;
 		values = new long[classZeroIndices.length / 2];
-		random = new cern.jet.random.engine.MersenneTwister();
+		random = new cern.jet.random.engine.MersenneTwister(seed);
 	}
 
 

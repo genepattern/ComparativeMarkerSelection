@@ -6,7 +6,7 @@ import java.util.*;
  * @created    October 4, 2004
  */
 public class PermutationTest {
-
+   static int seed = 4357;
 
 
 	public static void main(String[] args) {
@@ -41,7 +41,7 @@ public class PermutationTest {
 
 
 	static void test1() {
-		UnbalancedRandomPermuter permuter = new UnbalancedRandomPermuter(6, 3);
+		UnbalancedRandomPermuter permuter = new UnbalancedRandomPermuter(6, 3, seed);
 		System.out.println(doTest(permuter, 1000));
 		//6!/3!3!=20
 		// {010101=45, 010011=55, 101010=41, 000111=57, 101100=46, 100101=43, 110010=55, 011010=56, 111000=44, 001011=45, 011100=50, 010110=65, 100011=57, 100110=46, 110001=39, 001101=53, 110100=47, 001110=47, 011001=62, 101001=47}
@@ -51,7 +51,7 @@ public class PermutationTest {
 	static void test2() {
 		int[] classZeroIndices = {0, 1, 2, 3};
 		int[] classOneIndices = {4, 5, 6, 7};
-		BalancedRandomPermuter permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices);
+		BalancedRandomPermuter permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices, seed);
 		System.out.println(doTest(permuter, 1000));
 		// {00111010=24, 01101001=35, 11001010=34, 10101001=21, 10100101=20, 01010110=30, 01011001=30, 11001100=25, 00110101=34, 01011100=18, 10010011=29, 01010101=35, 10011001=22, 11000011=24, 10010101=19, 10011100=21, 10011010=30, 00110110=34, 10100011=28, 01011010=28, 11000110=30, 01101100=32, 01100011=26, 00111100=24, 11000101=30, 11001001=30, 00111001=21, 01010011=26, 01100101=38, 10101100=31, 00110011=33, 10010110=25, 01100110=25, 10100110=25, 10101010=31, 01101010=32}
 
@@ -61,7 +61,7 @@ public class PermutationTest {
 	static void test3() {
 		int[] classZeroIndices = {0, 1, 2, 3};
 		int[] classOneIndices = {4, 5, 6, 7};
-		BalancedCompletePermuter permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices);
+		BalancedCompletePermuter permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices, seed);
 		int total = permuter.getTotal().intValue();
 		System.out.println(doTest(permuter, total));
 		// 4!/2!2!*4!/2!2!

@@ -163,25 +163,48 @@ public class MarkerSelection {
 
 
    public static void main(String[] args) {
+      try {
+         run(args);  
+      } catch(Throwable t) {
+         AnalysisUtil.exit("An error occurred while running the algorithm. Please try again.");
+      }
+   }
+   
+   
+   static void run(String[] args) {
       String datasetFile = args[0];
       String clsFile = args[1];
-      int _numPermutations = Integer.parseInt(args[2]);
+      int _numPermutations = 0;
+      try {
+         _numPermutations = Integer.parseInt(args[2]);
+      } catch(NumberFormatException nfe) {
+         AnalysisUtil.exit("number of permutations is not an integer");
+      }
       int testDirection = Integer.parseInt(args[3]);
       String outputFileName = args[4];
       boolean balanced = Boolean.valueOf(args[5]).booleanValue();
       boolean complete = Boolean.valueOf(args[6]).booleanValue();
-      boolean fixStdevev = Boolean.valueOf(args[7]).booleanValue();
+      boolean fixStdev = Boolean.valueOf(args[7]).booleanValue();
       int metric = Integer.parseInt(args[8]);
-      int seed = Integer.parseInt(args[9]);;
+      int seed = 0;
+      try {
+         seed = Integer.parseInt(args[9]);
+      } catch(NumberFormatException nfe) {
+         AnalysisUtil.exit("random seed is not an integer");
+      }
       double minStd = -1;
       if(args.length==11) {
-         minStd = Double.parseDouble(args[10]); 
+         try {
+            minStd = Double.parseDouble(args[10]); 
+         } catch(NumberFormatException nfe) {
+            AnalysisUtil.exit("minimum standard deviation is not a number");  
+         }
       }
    
       new MarkerSelection(datasetFile,
             clsFile,
             _numPermutations, testDirection, outputFileName, balanced,
-            complete, fixStdevev, metric, minStd, seed);
+            complete, fixStdev, metric, minStd, seed);
    }
 
 

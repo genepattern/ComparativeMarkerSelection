@@ -15,7 +15,7 @@ public class PermutationTest {
 
 
 
-	static String toString(int[] a) {
+	public static String toString(int[] a) {
 		StringBuffer buf = new StringBuffer(a.length);
 		for(int i = 0; i < a.length; i++) {
 			buf.append(a[i]);
@@ -61,7 +61,7 @@ public class PermutationTest {
 	static void test3() {
 		int[] classZeroIndices = {0, 1, 2, 3};
 		int[] classOneIndices = {4, 5, 6, 7};
-		BalancedCompletePermuter permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices, seed);
+		BalancedCompletePermuter permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices);
 		int total = permuter.getTotal().intValue();
 		System.out.println(doTest(permuter, total));
 		// 4!/2!2!*4!/2!2!

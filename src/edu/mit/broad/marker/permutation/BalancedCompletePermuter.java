@@ -9,7 +9,7 @@ public class BalancedCompletePermuter implements Permuter {
 	int[] classZeroIndices;
 	int[] classOneIndices;
 	
-	public BalancedCompletePermuter(int[] classZeroIndices, int[] classOneIndices, int seed) {
+	public BalancedCompletePermuter(int[] classZeroIndices, int[] classOneIndices) {
 		this.classZeroIndices = classZeroIndices;
 		this.classOneIndices = classOneIndices;
 		comb1 = new CombinationGenerator(classOneIndices.length, classOneIndices.length/2);

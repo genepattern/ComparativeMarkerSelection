@@ -77,7 +77,7 @@ public class MarkerSelection {
    /** Seed for generating permutations */
    int seed;
    static Debugger debugger;
-
+   boolean seedUsed = false;
 
    public MarkerSelection(String datasetFile, String clsFile,
          int _numPermutations, int _side,
@@ -172,14 +172,10 @@ public class MarkerSelection {
       boolean complete = Boolean.valueOf(args[6]).booleanValue();
       boolean fixStdevev = Boolean.valueOf(args[7]).booleanValue();
       int metric = Integer.parseInt(args[8]);
-      int seed = 4357;
+      int seed = Integer.parseInt(args[9]);;
       double minStd = -1;
-      for(int i = 9; i < args.length; i++) {
-         if(args[i].equals("-s")) {
-            seed = Integer.parseInt(args[++i]);
-         } else if(args[i].equals("-m")) {
-            minStd = Double.parseDouble(args[++i]);
-         } 
+      if(args.length==11) {
+         minStd = Double.parseDouble(args[10]); 
       }
    
       new MarkerSelection(datasetFile,
@@ -220,8 +216,10 @@ public class MarkerSelection {
          }
       } else if(!complete && balanced) {
          permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices, seed);
+         seedUsed = true;
       } else if(!complete && !balanced) {
          permuter = new UnbalancedRandomPermuter(classVector.size(), classVector.getIndices(1).length, seed);
+         seedUsed = true;
       } else if(complete && !balanced) {
          permuter = new UnbalancedCompletePermuter(classVector.size(),
                classZeroIndices.length);
@@ -231,7 +229,8 @@ public class MarkerSelection {
          }
          numPermutations = totalPermutations.intValue();
       } else if(complete && balanced) {
-         permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices, seed);
+         permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices);
+         
          java.math.BigInteger totalPermutations = ((BalancedCompletePermuter) (permuter)).getTotal();
          if((totalPermutations.compareTo(new java.math.BigInteger("" + Integer.MAX_VALUE))) == 1) {
             AnalysisUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
@@ -444,7 +443,8 @@ public class MarkerSelection {
          }
          pw = new PrintWriter(new FileWriter(outputFileName));
          pw.println("ODF 1.0");
-         pw.println("HeaderLines=18");
+         String numHeaderLines = seedUsed?"19":"18";
+         pw.println("HeaderLines="+numHeaderLines);
          pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tFeature Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR(BH)\tBonferroni\tQ Value");
          pw.println("COLUMN_TYPES:int\tString\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat");
          pw.println("Model=Comparative Marker Selection");
@@ -477,6 +477,9 @@ public class MarkerSelection {
          pw.println("Fix Standard Deviation=" + fixStdev);
          for(int i = 0; i < qvalueHeaderLines; i++) {
             pw.println(qvalueHeaders[i]);
+         }
+         if(seedUsed) {
+            pw.println("Random Seed=" + seed);  
          }
          pw.println("DataLines=" + N);
          for(int i = 0; i < N; i++) {

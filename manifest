@@ -3,7 +3,7 @@
 p8_prefix_when_specified=
 p5_optional=
 p6_type=java.lang.String
-commandLine=<java> -DR=<R_HOME> -Dlibdir=<libdir> <java_flags> -cp <libdir>Jama-1.0.1.jar<path.separator><libdir>jakarta-oro-2.0.8.jar<path.separator><libdir>trove.jar<path.separator><libdir>MAGEstk-2003-10-24-v1.1-compatible.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>colt.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> <fix.standard.deviation> <test.statistic>
+commandLine=<java> -DR=<R_HOME> -Dlibdir=<libdir> <java_flags> -cp <libdir>Jama-1.0.1.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>colt.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> <fix.standard.deviation> <test.statistic>
 description=Module for marker selection.
 p8_default_value=false
 p2_TYPE=FILE
@@ -20,7 +20,7 @@ LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:0004
 p6_prefix_when_specified=
 p7_type=java.lang.String
 author=Stefano Monti, Gaddy Getz, Joshua Gould
-p4_value=1\=SNR;0\=T-Test
+p4_value=1\=SNR;0\=T-Test;3\=SNR (median);2\=T-Test (median)
 p6_description=Whether to perform all possible permutations
 p1_description=The input file - .res, .gct, .odf
 p7_name=balanced

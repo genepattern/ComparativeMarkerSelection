@@ -351,6 +351,12 @@ public class MarkerSelection {
 			double p = geneSpecificPValues[i];
 			fdr[i] = (p * N) / rank;
 		}
+      
+      // ensure fdr is monotonically decreasing
+      fdr[N-1] = Math.min(fdr[N-1], 1); 
+      for(int i = N-2; i >= 0; i--) {
+			fdr[i] = Math.min(fdr[i], fdr[i+1]);
+		}
 
 		int[] _ranks = null;
 

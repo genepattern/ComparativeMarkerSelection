@@ -52,7 +52,7 @@ public class MarkerSelection {
 	double[][] rankBasedScores;
 	double[][] geneSpecificScores;
 
-	/**  sorted unpermuted unpermutedScores for the top numFeatures */
+	/**  sorted unpermuted scores */
 	double[] unpermutedScores;
 
 
@@ -192,6 +192,16 @@ public class MarkerSelection {
 				_numPermutations, side, outputFileName, balanced,
 				complete, permutationsFile);
 	}
+	
+	int countNumberGreater(double score, double[] permutedScores) {
+		int count = 0;
+		for(int i = 0, length = permutedScores.length; i < length; i++) {
+			if(Math.abs(permutedScores[i]) >= Math.abs(score)) {
+				count++;
+			}
+		}
+		return count;
+	}
 
 	void computePValues() {
 		int[] classZeroIndices = classVector.getIndices(0);
@@ -248,10 +258,12 @@ public class MarkerSelection {
 				GPUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
 			}
 		}
+		
 		rankBasedScores = new double[numFeatures][numPermutations]; // FIXME
 		
 		geneSpecificScores = new double[dataset.getRowDimension()][numPermutations]; // FIXME
 		double[] fwer = new double[numFeatures];
+		double[] fpr = new double[dataset.getRowDimension()];
 		
 		double[] permutedScores = new double[dataset.getRowDimension()];
 		int[] levels = {0, 1};
@@ -308,11 +320,17 @@ public class MarkerSelection {
 					fwer[i] = fwer[i] + 1.0;
 				}
 			}
-
+			for(int i =0; i < dataset.getRowDimension(); i++) {
+				fpr[i] += countNumberGreater(unpermutedScores[i], permutedScores);
+			}
 		}
 		
 		for(int i = 0; i < numFeatures; i++) {
 			fwer[i] /= numPermutations;
+		}
+		for(int i = 0; i < dataset.getRowDimension(); i++) {
+			fpr[i] /= dataset.getRowDimension();
+			fpr[i] /= numPermutations;
 		}
 		double[] rankBasedPValues = null;
 		double[] geneSpecificPValues = null;
@@ -350,38 +368,16 @@ public class MarkerSelection {
 		}
 
 		double[] fdr = new double[numFeatures];
-		final int[] pValueIndices = Util.getIndices(geneSpecificPValues, 0);
+		int[] pValueIndices = Util.getIndices(fpr, 0);
+		int[] ranks = Util.rank(pValueIndices); // FIXME ties
+		double N = dataset.getRowDimension();
 		
-		int[] rank = new int[dataset.getRowDimension()];
-		
-		for (int j=0;j< numFeatures;j++) {
-			//double p = geneSpecificPValues[pValueIndices[j]];
-			rank[pValueIndices[j]]=j+1;
-		}
-		
-		double[] topFeaturesGeneSpecificPValues = new double[numFeatures];
 		for(int i = 0; i < numFeatures; i++) {
-			int originalIndex = topFeaturesIndices[topFeaturesIndices.length-1-i];
-			topFeaturesGeneSpecificPValues[i] = geneSpecificPValues[originalIndex];
+			int index = topFeaturesIndices[topFeaturesIndices.length-1-i];
+			int rank = ranks[index];
+			double p = fpr[index];
+			fdr[i] = p * N/rank;
 		}
-		
-		int N = dataset.getRowDimension();
-		for(int i = 0; i < numFeatures; i++) {
-			int originalIndex = topFeaturesIndices[topFeaturesIndices.length-1-i];
-			fdr[i] = topFeaturesGeneSpecificPValues[i] * N/(double)rank[originalIndex];
-		}
-		
-		Util.print(rankBasedScores);
-		/*for(int i = 0; i < dataset.getRowDimension(); i++) {
-			System.out.print(dataset.getRowName(i) + "\t");
-			System.out.print(unpermutedScores[i] + "\t");
-			System.out.print(geneSpecificPValues[i] + "\t");
-			for(int j = 0; j < numPermutations; j++) {
-				
-				System.out.print(geneSpecificScores[i][j] + "\t");
-			}
-			System.out.println();
-		}*/
 		
 		PrintWriter pw = null;
 		java.util.Vector features = new java.util.Vector(numFeatures);
@@ -396,7 +392,7 @@ public class MarkerSelection {
 				pw.println(features.get(feature) + "\t" +
 						rankBasedPValues[feature] + "\t" +
 						geneSpecificPValues[originalIndex] + "\t " +
-						fwer[feature] + "\t" + fdr[feature]);
+						fwer[feature] + "\t" + fpr[originalIndex] + "\t" + fdr[feature]);
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -411,10 +407,19 @@ public class MarkerSelection {
 			} catch(Exception x) {
 			}
 		}
-
 		
+		double[] topFeaturesGeneSpecificPValues = new double[numFeatures];
+		double[] topFeatures_fpr = new double[numFeatures];
+		
+			
+		for(int i = 0; i < numFeatures; i++) {
+			int originalIndex = topFeaturesIndices[topFeaturesIndices.length-1-i];
+			topFeatures_fpr[i] = fpr[originalIndex];
+			topFeaturesGeneSpecificPValues[i] = geneSpecificPValues[originalIndex];
+			
+		}
 		new MarkerSelectionFrame(features, topFeaturesGeneSpecificPValues,
-				rankBasedPValues, fwer, fdr);
+				rankBasedPValues, fwer, fdr, topFeatures_fpr);
 	}
 
 

@@ -14,8 +14,8 @@ import edu.mit.broad.io.microarray.*;
 import edu.mit.broad.marker.permutation.*;
 
 /**
- *@author     Joshua Gould
- *@created    September 17, 2004
+ * @author     Joshua Gould
+ * @created    September 17, 2004
  */
 public class MarkerSelection {
 
@@ -52,10 +52,7 @@ public class MarkerSelection {
 	String outputFileName;
 
 	/**  unpermuted scores */
-	double[] unpermutedScores;
-
-	/**  sorted indices in the input dataset of the top numFeatures */
-	int[] topFeaturesIndices;
+	double[] scores;
 
 	/**  number of rows in input data */
 	int N;
@@ -152,23 +149,11 @@ public class MarkerSelection {
 			}
 		}
 
-		unpermutedScores = new double[N];
+		scores = new double[N];
 
 		statisticalMeasure.compute(dataset,
 				classZeroIndices,
-				classOneIndices, unpermutedScores, fixStdev);
-
-		int sortOrder = -1;
-		if(testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-			sortOrder = Util.ASCENDING;
-		} else if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
-			sortOrder = Util.DESCENDING;
-		} else if(testDirection == TWO_SIDED) {
-			sortOrder = Util.ABSOLUTE;
-		} else {
-			GPUtil.exit("Unknown test direction");
-		}
-		topFeaturesIndices = Util.getIndices(unpermutedScores, sortOrder);
+				classOneIndices, scores, fixStdev);
 
 		Permuter permuter = null;
 
@@ -192,14 +177,15 @@ public class MarkerSelection {
 			}
 		}
 
-		double[] descendingScores = (double[]) unpermutedScores.clone();
+		int[] descendingIndices = Util.getIndices(scores, Util.DESCENDING);
+		double[] absoluteScores = (double[]) scores.clone();
 		for(int i = 0; i < N; i++) {
-			descendingScores[i] = Math.abs(descendingScores[i]);
+			absoluteScores[i] = Math.abs(absoluteScores[i]);
 		}
-		int[] descendingIndices = Util.getIndices(descendingScores, Util.DESCENDING);
+		int[] descendingAbsIndices = Util.getIndices(absoluteScores, Util.DESCENDING);
 
 		double[] rankBasedPValues = new double[N];
-		double[] all_features_fwer = new double[N];
+		double[] fwer = new double[N];
 		double[] fpr = new double[N];
 		double[] geneSpecificPValues = new double[N];
 		double[] permutedScores = new double[N];
@@ -229,10 +215,10 @@ public class MarkerSelection {
 
 			statisticalMeasure.compute(dataset,
 					permutedClassZeroIndices,
-					permutedClassOneIndices, permutedScores, fixStdev); // compute scores using permuted class labels
+					permutedClassOneIndices, permutedScores, fixStdev);// compute scores using permuted class labels
 
 			for(int i = 0; i < N; i++) {
-				double score = unpermutedScores[i];
+				double score = scores[i];
 				if(testDirection == TWO_SIDED || testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
 					if(permutedScores[i] >= score) {
 						geneSpecificPValues[i] += 1.0;
@@ -245,20 +231,20 @@ public class MarkerSelection {
 
 			}
 
-			int permutedScoresSortOrder = Util.DESCENDING;
-			if(testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-				permutedScoresSortOrder = Util.ASCENDING;
-			}
-			Util.sort(permutedScores, permutedScoresSortOrder);
-
+			Util.sort(permutedScores, Util.DESCENDING);
+			
 			for(int i = 0; i < N; i++) {
-				double score = unpermutedScores[topFeaturesIndices[i]];
+				double score = scores[descendingIndices[i]];
 
 				if(testDirection == TWO_SIDED) {
-					if(score >= 0 && permutedScores[i] >= score) {
-						rankBasedPValues[i] += 1.0;
-					} else if(permutedScores[i] <= score) {
-						rankBasedPValues[i] += 1.0;
+					if(score >= 0) {
+						if(permutedScores[i] >= score) {
+							rankBasedPValues[i] += 1.0;
+						}
+					} else {	
+						if(permutedScores[i] <= score) {
+							rankBasedPValues[i] += 1.0;
+						}
 					}
 				} else if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
 					if(permutedScores[i] >= score) {
@@ -279,20 +265,18 @@ public class MarkerSelection {
 			int j = 0;
 			int count = 0;
 			for(int i = 0; i < N; i++) {
-				double score = descendingScores[descendingIndices[i]];
+				double score = absoluteScores[descendingAbsIndices[i]];
 				while(j < N && score < permutedScores[j]) {
 					count++;
 					j++;
 				}
-				fpr[descendingIndices[i]] += count;
+				fpr[descendingAbsIndices[i]] += count;
 
 				if(count > 0) {
-					all_features_fwer[descendingIndices[i]]++;
+					fwer[descendingAbsIndices[i]]++;
 				}
 			}
 		}
-
-		double[] fwer = new double[N];
 
 		for(int i = 0; i < N; i++) {
 			fpr[i] /= N;
@@ -301,12 +285,8 @@ public class MarkerSelection {
 			if(testDirection == TWO_SIDED) {
 				geneSpecificPValues[i] = 2.0 * Math.min(geneSpecificPValues[i], 1.0 - geneSpecificPValues[i]);
 			}
-			fwer[i] = all_features_fwer[topFeaturesIndices[i]];
 			fwer[i] /= numPermutations;
 			rankBasedPValues[i] /= numPermutations;
-			if(testDirection == TWO_SIDED) {
-				rankBasedPValues[i] = 2.0 * Math.min(rankBasedPValues[i], 1.0 - rankBasedPValues[i]);
-			}
 		}
 
 		double[] fdr = new double[N];
@@ -323,23 +303,40 @@ public class MarkerSelection {
 		}
 
 		for(int i = 0; i < N; i++) {
-			int index = topFeaturesIndices[i];
+			int index = i;
 			int rank = ranks[index];
 			double p = fpr[index];
 			fdr[i] = (p * N) / rank;
+		}
+
+		int[] sortedIndices = null;
+		if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE || testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
+			sortedIndices = descendingIndices;
+		} else if(testDirection == TWO_SIDED) {
+			sortedIndices = descendingIndices;
 		}
 
 		PrintWriter pw = null;
 
 		try {
 			pw = new PrintWriter(new FileWriter(outputFileName));
-
-			for(int i = 0; i < N; i++) {
-				int sortedIndex = topFeaturesIndices[i];
-
-				pw.println(dataset.getRowName(sortedIndex) + "\t" +
-						unpermutedScores[sortedIndex] + "\t" + geneSpecificPValues[sortedIndex] + "\t " + fpr[sortedIndex] + "\t" + fwer[i] + "\t" + rankBasedPValues[i] + "\t" + fdr[i]);
+			pw.println("Feature\tScore\tGene Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR");
+			if(1==2) { //testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
+				for(int i = N - 1; i >= 0; i--) {
+					int sortedIndex = sortedIndices[i];
+					int rank = N-i;
+					pw.println(rank + "\t" + dataset.getRowName(sortedIndex) + "\t" +
+							scores[sortedIndex] + "\t" + geneSpecificPValues[sortedIndex] + "\t " + fpr[sortedIndex] + "\t" + fwer[sortedIndex] + "\t" + rankBasedPValues[i] + "\t" + fdr[sortedIndex]);
+				}
+			} else {
+				for(int i = 0; i < N; i++) {
+					int sortedIndex = sortedIndices[i];
+					//int rank = i + 1;
+					pw.println(dataset.getRowName(sortedIndex) + "\t" +
+							scores[sortedIndex] + "\t" + geneSpecificPValues[sortedIndex] + "\t " + fpr[sortedIndex] + "\t" + fwer[sortedIndex] + "\t" + rankBasedPValues[i] + "\t" + fdr[sortedIndex]);
+				}
 			}
+
 		} catch(Exception e) {
 			GPUtil.exit("An error occurred while saving the output file.", e);
 		} finally {
@@ -360,7 +357,7 @@ public class MarkerSelection {
 	/**
 	 *  Reads the next permutation from a file
 	 *
-	 *@return    the next permutation
+	 * @return    the next permutation
 	 */
 	int[] nextPermutation() {
 		try {
@@ -385,7 +382,7 @@ public class MarkerSelection {
 	/**
 	 *  Opens the permutations file for reading
 	 *
-	 *@param  fileName  the file name
+	 * @param  fileName  the file name
 	 */
 	void initFile(String fileName) {
 
@@ -401,45 +398,45 @@ public class MarkerSelection {
 
 
 	/**
-	 *@author     Joshua Gould
-	 *@created    September 29, 2004
+	 * @author     Joshua Gould
+	 * @created    September 29, 2004
 	 */
 	static class TTest implements StatisticalMeasure {
 		public void compute(Dataset dataset,
 				int[] classZeroIndices,
-				int[] classOneIndices, double[] unpermutedScores, boolean fixStdev) {
+				int[] classOneIndices, double[] scores, boolean fixStdev) {
 			Util.ttest(dataset,
 					classZeroIndices,
-					classOneIndices, unpermutedScores, fixStdev);
+					classOneIndices, scores, fixStdev);
 
 		}
 	}
 
 
 	/**
-	 *@author     Joshua Gould
-	 *@created    September 29, 2004
+	 * @author     Joshua Gould
+	 * @created    September 29, 2004
 	 */
 	static class SNR implements StatisticalMeasure {
 		public void compute(Dataset dataset,
 				int[] classZeroIndices,
-				int[] classOneIndices, double[] unpermutedScores, boolean fixStdev) {
+				int[] classOneIndices, double[] scores, boolean fixStdev) {
 			Util.snr(dataset,
 					classZeroIndices,
-					classOneIndices, unpermutedScores, fixStdev);
+					classOneIndices, scores, fixStdev);
 
 		}
 	}
 
 
 	/**
-	 *@author     Joshua Gould
-	 *@created    September 29, 2004
+	 * @author     Joshua Gould
+	 * @created    September 29, 2004
 	 */
 	static interface StatisticalMeasure {
 		public void compute(Dataset dataset,
 				int[] classZeroIndices,
-				int[] classOneIndices, double[] unpermutedScores, boolean fixStdev);
+				int[] classOneIndices, double[] scores, boolean fixStdev);
 	}
 
 }

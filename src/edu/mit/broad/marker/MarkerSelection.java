@@ -336,7 +336,7 @@ public class MarkerSelection {
 				int sortedIndex = topFeaturesIndices[i];
 
 				pw.println(dataset.getRowName(sortedIndex) + "\t" +
-						unpermutedScores[sortedIndex] + "\t" + geneSpecificPValues[i] + "\t " + fpr[sortedIndex] + "\t" + fwer[i] + "\t" + rankBasedPValues[i] + "\t" + fdr[i]);
+						unpermutedScores[sortedIndex] + "\t" + geneSpecificPValues[sortedIndex] + "\t " + fpr[sortedIndex] + "\t" + fwer[i] + "\t" + rankBasedPValues[i] + "\t" + fdr[i]);
 			}
 		} catch(Exception e) {
 			GPUtil.exit("An error occurred while saving the output file.", e);

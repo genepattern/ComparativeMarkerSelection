@@ -3,21 +3,55 @@ package edu.mit.broad.marker.permutation;
 import java.util.*;
 
 public class UnbalancedRandomPermuter implements Permuter {
-	Random rand;
-	int[] assignments;
 	
-	public UnbalancedRandomPermuter(int[] assignments) {
-		this.assignments = assignments;
-		rand = new Random(3);
+	cern.jet.random.engine.MersenneTwister random;
+	long[] values;
+	int size;
+	int numClassOne;
+	public UnbalancedRandomPermuter(int size, int numClassOne) {
+		random = new cern.jet.random.engine.MersenneTwister();
+		this.size = size;
+		this.numClassOne = numClassOne;
+		values = new long[numClassOne];
 	}
 
 	public int[] next() {
-		int N = assignments.length;
-		return gc_permute(assignments);
+		int[] assignments = new int[size];
 		
+		cern.jet.random.sampling.RandomSampler.sample(numClassOne, size, numClassOne, 0, values, 0, random); 
+		
+		for(int i = 0; i < values.length; i++) {
+			int classOneIndex = (int) values[i];
+			assignments[classOneIndex] = 1;
+		}
+		return assignments;
 	}
 	
-    int[] gc_permute(int[] _aArr) {
+	static String toString(int[] a) {
+		String s = "";
+		for(int i = 0; i < a.length; i++) {
+			s+= a[i];	
+		}
+		return s;
+	}
+	
+	public static void main(String[] args) {
+		UnbalancedRandomPermuter perm = new UnbalancedRandomPermuter(4, 1);
+		HashMap map = new HashMap();
+		for(int i = 0; i < 100; i++) {
+			String p = toString(perm.next());
+			Integer count = (Integer) map.get(p);
+			if(count == null) {
+				count = new Integer(1);	
+			} else {
+				count = new Integer(count.intValue()+1);
+			}
+			map.put(p, count);
+		}
+		System.out.println(map);
+	}
+	
+  /*  int[] gc_permute(int[] _aArr) {
 		int[] aArr = (int[]) _aArr.clone();
       int len=aArr.length;
       int r;
@@ -29,5 +63,5 @@ public class UnbalancedRandomPermuter implements Permuter {
          aArr[i - 1]=tmpInd;
       }
       return aArr;
-   }
+   }*/
 }

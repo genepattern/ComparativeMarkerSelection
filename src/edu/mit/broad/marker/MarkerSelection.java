@@ -14,8 +14,8 @@ import edu.mit.broad.io.microarray.*;
 import edu.mit.broad.marker.permutation.*;
 
 /**
- *@author     Joshua Gould
- *@created    September 17, 2004
+ * @author     Joshua Gould
+ * @created    September 17, 2004
  */
 public class MarkerSelection {
 
@@ -137,9 +137,9 @@ public class MarkerSelection {
 	 *  computes the number of scores in permuted scores that are greater than or
 	 *  equal to the given score
 	 *
-	 *@param  score           the score
-	 *@param  permutedScores  the permuted scores
-	 *@return                 the number of permuted scores >= score
+	 * @param  score           the score
+	 * @param  permutedScores  the permuted scores
+	 * @return                 the number of permuted scores >= score
 	 */
 	static int countNumberGreater(double score, double[] permutedScores) {
 		int count = 0;
@@ -210,6 +210,13 @@ public class MarkerSelection {
 			}
 		}
 
+		double[] descendingScores = (double[]) unpermutedScores.clone();
+		for(int i = 0; i < N; i++) {
+			descendingScores[i] = Math.abs(descendingScores[i]);
+		}
+		int[] descendingIndices = Util.getIndices(descendingScores, Util.DESCENDING);
+
+			
 		double[] rankBasedPValues = new double[N];
 		double[] all_features_fwer = new double[N];
 		double[] fpr = new double[N];
@@ -241,7 +248,7 @@ public class MarkerSelection {
 
 			statisticalMeasure.compute(dataset,
 					permutedClassZeroIndices,
-					permutedClassOneIndices, permutedScores, fixStdev); // compute scores using permuted class labels
+					permutedClassOneIndices, permutedScores, fixStdev);// compute scores using permuted class labels
 
 			for(int i = 0; i < N; i++) {
 				double score = unpermutedScores[i];
@@ -258,11 +265,6 @@ public class MarkerSelection {
 						geneSpecificPValues[i] += 1.0;
 					}
 				}
-				int numGreater = countNumberGreater(unpermutedScores[i], permutedScores);
-				fpr[i] += numGreater;
-				if(numGreater > 0) {
-					all_features_fwer[i] = all_features_fwer[i] + 1.0;
-				}
 			}
 
 			if(side == TWO_SIDED) {
@@ -278,8 +280,10 @@ public class MarkerSelection {
 			}
 			Util.sort(permutedScores, permutedScoresSortOrder);
 
+			
 			for(int i = 0; i < N; i++) {
 				double score = unpermutedScores[topFeaturesIndices[i]];
+
 				if(side == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
 					if(permutedScores[i] >= score) {
 						rankBasedPValues[i] += 1.0;
@@ -292,6 +296,29 @@ public class MarkerSelection {
 					if(Math.abs(permutedScores[i]) >= Math.abs(score)) {
 						rankBasedPValues[i] += 1.0;
 					}
+				}
+			}
+
+			
+			if(side != TWO_SIDED) {
+				for(int i = 0; i < N; i++) {
+					permutedScores[i] = Math.abs(permutedScores[i]);
+				}
+				Util.sort(permutedScores, Util.DESCENDING);
+			}
+			
+			int j = 0;
+			int count = 0;
+			for(int i = 0; i < N; i++) {
+				double score = descendingScores[descendingIndices[i]];
+				while(j < N && score < permutedScores[j]) {
+					count++;
+					j++;
+				}
+				fpr[descendingIndices[i]] += count;
+	
+				if(count > 0) {
+					all_features_fwer[descendingIndices[i]]++;
 				}
 			}
 		}
@@ -358,7 +385,7 @@ public class MarkerSelection {
 	/**
 	 *  Reads the next permutation from a file
 	 *
-	 *@return    the next permutation
+	 * @return    the next permutation
 	 */
 	int[] nextPermutation() {
 		try {
@@ -383,7 +410,7 @@ public class MarkerSelection {
 	/**
 	 *  Opens the permutations file for reading
 	 *
-	 *@param  fileName  the file name
+	 * @param  fileName  the file name
 	 */
 	void initFile(String fileName) {
 
@@ -399,7 +426,8 @@ public class MarkerSelection {
 
 
 	/**
-	 *@author    Joshua Gould
+	 * @author     Joshua Gould
+	 * @created    September 29, 2004
 	 */
 	static class TTest implements StatisticalMeasure {
 		public void compute(Dataset dataset,
@@ -414,7 +442,8 @@ public class MarkerSelection {
 
 
 	/**
-	 *@author    Joshua Gould
+	 * @author     Joshua Gould
+	 * @created    September 29, 2004
 	 */
 	static class SNR implements StatisticalMeasure {
 		public void compute(Dataset dataset,
@@ -429,7 +458,8 @@ public class MarkerSelection {
 
 
 	/**
-	 *@author    Joshua Gould
+	 * @author     Joshua Gould
+	 * @created    September 29, 2004
 	 */
 	static interface StatisticalMeasure {
 		public void compute(Dataset dataset,

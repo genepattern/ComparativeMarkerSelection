@@ -39,7 +39,9 @@ public class MarkerSelection {
 	final static int SNR = 1;
    final static int T_TEST_MEDIAN = 2;
 	final static int SNR_MEDIAN = 3;
-
+   final static int T_TEST_MIN_STD = 4;
+   /** minimum standard deviation when metric==T_TEST_MIN_STD */
+   double minStd;
 	/**  whether permutations are balanced */
 	boolean balanced;
 
@@ -79,9 +81,10 @@ public class MarkerSelection {
 	public MarkerSelection(String datasetFile, String clsFile,
 			int _numPermutations, int _side,
 			String _outputFileName, boolean _balanced,
-			boolean complete, boolean fixStdev, int metric) {
+			boolean complete, boolean fixStdev, int metric, double minStd) {
 		this.datasetFile = datasetFile;
 		this.clsFile = clsFile;
+      this.minStd = minStd;
 		IExpressionDataReader reader = AnalysisUtil.getExpressionReader(datasetFile);
 		ExpressionData expressionData = (ExpressionData) AnalysisUtil.readExpressionData(reader, datasetFile, new ExpressionDataCreator());
 		
@@ -127,7 +130,12 @@ public class MarkerSelection {
          statisticalMeasure = new SNR();
 		} else if(metric == SNR_MEDIAN) {
          statisticalMeasure = new SNRMedian();
-      } else {
+      } else if(metric==T_TEST_MIN_STD) {
+         if(minStd <= 0) {
+            AnalysisUtil.exit("Minimum standard deviation must be greater than zero.");
+         }
+         statisticalMeasure = new TTestMinStd(minStd);
+      }else {
 			AnalysisUtil.exit("Unknown test statistic");
 		}
 
@@ -160,11 +168,15 @@ public class MarkerSelection {
 		boolean complete = Boolean.valueOf(args[6]).booleanValue();
 		boolean fixStdev = Boolean.valueOf(args[7]).booleanValue();
 		int metric = Integer.parseInt(args[8]);
-	
+      double minStd = -1;
+      if(args.length==10) {
+         minStd = Double.parseDouble(args[9]);
+      }
+      
 		new MarkerSelection(datasetFile,
 				clsFile,
 				_numPermutations, testDirection, outputFileName, balanced,
-				complete, fixStdev, metric);
+				complete, fixStdev, metric, minStd);
 	}
 
 
@@ -395,11 +407,13 @@ public class MarkerSelection {
 			if(metric == SNR) {
 				pw.println("Test Statistic=SNR");
 			} else if(metric == SNR_MEDIAN) {
-            pw.println("Test Statistic=SNR(median)");
+            pw.println("Test Statistic=SNR (median)");
          } else if(metric==T_TEST){
 				pw.println("Test Statistic=T-Test");
 			} else if(metric==T_TEST_MEDIAN) {
-            pw.println("Test Statistic=T-Test(median)");
+            pw.println("Test Statistic=T-Test (median)");
+         } else if(metric==T_TEST_MIN_STD) {
+            pw.println("Test Statistic=T-Test (min std="+minStd+")");
          }
 
 			pw.println("Fix Standard Deviation=" + fixStdev);
@@ -520,6 +534,23 @@ public class MarkerSelection {
 			Util.snrMedian(dataset,
 					classZeroIndices,
 					classOneIndices, scores, fixStdev);
+
+		}
+	}
+   
+   static class TTestMinStd implements StatisticalMeasure {
+      double minStd;
+      
+      public TTestMinStd(double min) {
+         this.minStd = min;   
+      }
+      
+		public void compute(DoubleMatrix2D dataset,
+				int[] classZeroIndices,
+				int[] classOneIndices, double[] scores, boolean fixStdev) {
+			Util.ttest(dataset,
+					classZeroIndices,
+					classOneIndices, scores, fixStdev, minStd);
 
 		}
 	}

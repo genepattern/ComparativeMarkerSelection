@@ -171,6 +171,35 @@ public class Util {
 	}
 
 
+   public static void ttest(DoubleMatrix2D dataset,
+			int[] classOneIndices,
+			int[] class2Indices,
+			double[] scores, boolean fixStdDev, double minStd) {
+
+		int rows = dataset.getRowCount();
+
+		for(int i = 0; i < rows; i++) {
+
+			double class1Mean = Util.mean(dataset, classOneIndices, i);
+			double class2Mean = Util.mean(dataset, class2Indices, i);
+			double class1Std = Util.standardDeviation(dataset, classOneIndices,
+					i, class1Mean);
+        
+			double class2Std = Util.standardDeviation(dataset, class2Indices, i,
+					class2Mean);
+			if(fixStdDev) {
+				class1Std = fixStdDev(class1Std, class1Mean);
+				class2Std = fixStdDev(class2Std, class2Mean);
+			}
+			class1Std = Math.max(class1Std, minStd);
+			class2Std = Math.max(class2Std, minStd);
+			
+			double Sxi = (class1Mean - class2Mean) / Math.sqrt((class1Std * class1Std / classOneIndices.length) + (class2Std * class2Std / class2Indices.length));
+			scores[i] = Sxi;
+		}
+	}
+   
+   
 	public static void ttest(DoubleMatrix2D dataset,
 			int[] classOneIndices,
 			int[] class2Indices,

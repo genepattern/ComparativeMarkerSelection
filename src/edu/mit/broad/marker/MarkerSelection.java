@@ -61,14 +61,27 @@ public class MarkerSelection {
 	boolean fixStdev;
 	StatisticalMeasure statisticalMeasure;
 
-
-	public MarkerSelection(Dataset _dataset, ClassVector _classVector,
+	/** Input dataset file name */
+	String datasetFile;
+	/** Input cls file name */
+	String clsFile;
+	public MarkerSelection(String datasetFile, String clsFile,
 			int _numPermutations, int _side,
 			String _outputFileName, boolean _balanced,
 			boolean complete, boolean fixStdev, int metric, String permutationsFile) {
-		this.dataset = _dataset;
-		this.classVector = _classVector;
-
+		this.datasetFile = datasetFile;
+		this.clsFile = clsFile;
+		ExpressionDataReader reader = GPUtil.getExpressionReader(datasetFile);
+		ExpressionDataImpl expressionData = null;
+		try {
+			expressionData = (ExpressionDataImpl) reader.read(datasetFile);
+		} catch(Exception e) {
+			GPUtil.exit("An error occurred while reading the file " + datasetFile, e);
+		}
+		
+		this.dataset = expressionData.getExpressionMatrix();
+		this.classVector = GPUtil.getClassVector(clsFile);
+		
 		GPUtil.checkDimensions(dataset, classVector);
 		if(classVector.levels() != 2) {
 			GPUtil.exit("Class file must contain 2 classes.");
@@ -112,9 +125,7 @@ public class MarkerSelection {
 	}
 
 
-	public static void main(String[] args)
-			 throws Exception {
-
+	public static void main(String[] args) {
 		String datasetFile = args[0];
 		String clsFile = args[1];
 		int _numPermutations = Integer.parseInt(args[2]);
@@ -128,10 +139,9 @@ public class MarkerSelection {
 		if(args.length == 10) {
 			permutationsFile = args[9];
 		}
-		ExpressionDataReader reader = GPUtil.getExpressionReader(datasetFile);
-		ExpressionDataImpl e = (ExpressionDataImpl) reader.read(datasetFile);
-		new MarkerSelection(e.getExpressionMatrix(),
-				GPUtil.getClassVector(clsFile),
+	
+		new MarkerSelection(datasetFile,
+				clsFile,
 				_numPermutations, testDirection, outputFileName, balanced,
 				complete, fixStdev, metric, permutationsFile);
 	}
@@ -334,6 +344,8 @@ public class MarkerSelection {
 			pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tGene Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR\tBonferroni");
 			pw.println("COLUMN_TYPES:int\tString\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat");
 			pw.println("Model=Comparative Marker Selection");
+			pw.println("Dataset File=" + datasetFile);
+			pw.println("Class File=" + clsFile);
 			pw.println("Permutations=" + numPermutations);
 			pw.println("Balanced=" + balanced);
 			pw.println("Complete=" + complete);

@@ -368,8 +368,8 @@ public class MarkerSelection {
 			}
 			pw = new PrintWriter(new FileWriter(outputFileName));
 			pw.println("ODF 1.0");
-			pw.println("HeaderLines=15");
-			pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tGene Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR(BH)\tBonferroni\tQ Value");
+			pw.println("HeaderLines=18");
+			pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tFeature Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR(BH)\tBonferroni\tQ Value");
 			pw.println("COLUMN_TYPES:int\tString\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat");
 			pw.println("Model=Comparative Marker Selection");
 			pw.println("Dataset File=" + AnalysisUtil.getFileName(datasetFile));
@@ -388,13 +388,15 @@ public class MarkerSelection {
 			pw.println("Class 1=" + classVector.getClassName(1));
 			if(metric == SNR) {
 				pw.println("Test Statistic=SNR");
-			} else {
+			} else if(metric == SNR_MEDIAN) {
+            pw.println("Test Statistic=SNR(median)");
+         } else if(metric==T_TEST){
 				pw.println("Test Statistic=T-Test");
-			}
+			} else if(metric==T_TEST_MEDIAN) {
+            pw.println("Test Statistic=T-Test(median)");
+         }
 
 			pw.println("Fix Standard Deviation=" + fixStdev);
-        
-		//	pw.println("DataLines=" + N); added by R code
 
 			for(int i = 0; i < N; i++) {
 				int index = descendingIndices[i];

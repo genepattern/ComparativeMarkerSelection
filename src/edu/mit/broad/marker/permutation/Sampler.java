@@ -1,7 +1,6 @@
 package edu.mit.broad.marker.permutation;
 import java.util.Random;
 
-import gnu.trove.*;
 import java.math.BigInteger;
 
 /**

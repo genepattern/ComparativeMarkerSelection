@@ -8,7 +8,7 @@ import java.util.StringTokenizer;
 
 import edu.mit.broad.dataobj.*;
 import edu.mit.broad.dataobj.microarray.*;
-import edu.mit.broad.gp.*;
+import edu.mit.broad.gp.ModuleUtil;
 import edu.mit.broad.io.microarray.*;
 
 import edu.mit.broad.marker.permutation.*;
@@ -71,20 +71,20 @@ public class MarkerSelection {
 			boolean complete, boolean fixStdev, int metric, String permutationsFile) {
 		this.datasetFile = datasetFile;
 		this.clsFile = clsFile;
-		ExpressionDataReader reader = GPUtil.getExpressionReader(datasetFile);
+		ExpressionDataReader reader = ModuleUtil.getExpressionReader(datasetFile);
 		ExpressionDataImpl expressionData = null;
 		try {
 			expressionData = (ExpressionDataImpl) reader.read(datasetFile);
 		} catch(Exception e) {
-			GPUtil.exit("An error occurred while reading the file " + datasetFile, e);
+			ModuleUtil.exit("An error occurred while reading the file " + datasetFile, e);
 		}
 		
 		this.dataset = expressionData.getExpressionMatrix();
-		this.classVector = GPUtil.getClassVector(clsFile);
+		this.classVector = ModuleUtil.readClassVector(clsFile);
 		
-		GPUtil.checkDimensions(dataset, classVector);
+		ModuleUtil.checkDimensions(dataset, classVector);
 		if(classVector.levels() != 2) {
-			GPUtil.exit("Class file must contain 2 classes.");
+			ModuleUtil.exit("Class file must contain 2 classes.");
 		}
 		this.numPermutations = _numPermutations;
 		this.testDirection = _side;
@@ -103,11 +103,11 @@ public class MarkerSelection {
 		} else if(metric == SNR) {
 			statisticalMeasure = new SNR();
 		} else {
-			GPUtil.exit("Unknown test statistic");
+			ModuleUtil.exit("Unknown test statistic");
 		}
 
 		if(testDirection != CLASS_ZERO_GREATER_THAN_CLASS_ONE && testDirection != CLASS_ZERO_LESS_THAN_CLASS_ONE && testDirection != TWO_SIDED) {
-			GPUtil.exit("Unknown test direction.");
+			ModuleUtil.exit("Unknown test direction.");
 		}
 
 		computePValues();
@@ -152,15 +152,15 @@ public class MarkerSelection {
 		int[] classOneIndices = classVector.getIndices(1);
 		if(balanced) {
 			if(classZeroIndices.length != classOneIndices.length) {
-				GPUtil.exit(
+				ModuleUtil.exit(
 						"The number of items in each class must be equal for balanced permutations.");
 			}
 			if((classZeroIndices.length % 2) != 0) {
-				GPUtil.exit(
+				ModuleUtil.exit(
 						"The number of items in class 0 must be an even number for balanced permutations.");
 			}
 			if((classOneIndices.length % 2) != 0) {
-				GPUtil.exit(
+				ModuleUtil.exit(
 						"The number of items in class 1 must be an even number for balanced permutations.");
 			}
 		}
@@ -181,14 +181,14 @@ public class MarkerSelection {
 					classZeroIndices.length);
 			java.math.BigInteger totalPermutations = ((UnbalancedCompletePermuter) (permuter)).getTotal();
 			if((totalPermutations.compareTo(new java.math.BigInteger("" + Integer.MAX_VALUE))) == 1) {
-				GPUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
+				ModuleUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
 			}
 			numPermutations = totalPermutations.intValue();
 		} else if(complete && balanced) {
 			permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices);
 			java.math.BigInteger totalPermutations = ((BalancedCompletePermuter) (permuter)).getTotal();
 			if((totalPermutations.compareTo(new java.math.BigInteger("" + Integer.MAX_VALUE))) == 1) {
-				GPUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
+				ModuleUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
 			}
 		}
 
@@ -340,12 +340,12 @@ public class MarkerSelection {
 			}
 			pw = new PrintWriter(new FileWriter(outputFileName));
 			pw.println("ODF 1.0");
-			pw.println("HeaderLines=14");
-			pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tGene Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR\tBonferroni");
-			pw.println("COLUMN_TYPES:int\tString\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat");
+			pw.println("HeaderLines=15");
+			pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tGene Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR(BH)\tBonferroni\tQ Value");
+			pw.println("COLUMN_TYPES:int\tString\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat");
 			pw.println("Model=Comparative Marker Selection");
-			pw.println("Dataset File=" + datasetFile);
-			pw.println("Class File=" + clsFile);
+			pw.println("Dataset File=" + ModuleUtil.getFileName(datasetFile));
+			pw.println("Class File=" + ModuleUtil.getFileName(clsFile));
 			pw.println("Permutations=" + numPermutations);
 			pw.println("Balanced=" + balanced);
 			pw.println("Complete=" + complete);
@@ -365,7 +365,7 @@ public class MarkerSelection {
 			}
 
 			pw.println("Fix Standard Deviation=" + fixStdev);
-			pw.println("DataLines=" + N);
+		//	pw.println("DataLines=" + N); added by R code
 
 			for(int i = 0; i < N; i++) {
 				int index = descendingIndices[i];
@@ -378,9 +378,9 @@ public class MarkerSelection {
 				pw.println(rank + "\t" + dataset.getRowName(index) + "\t" +
 						scores[index] + "\t" + geneSpecificPValues[index] + "\t " + fpr[index] + "\t" + fwer[index] + "\t" + rankBasedPValues[i] + "\t" + fdr[index] + "\t" + bonferroni);
 			}
-
+			
 		} catch(Exception e) {
-			GPUtil.exit("An error occurred while saving the output file.", e);
+			ModuleUtil.exit("An error occurred while saving the output file.", e);
 		} finally {
 
 			if(pw != null) {
@@ -391,6 +391,7 @@ public class MarkerSelection {
 				}
 			}
 		}
+		edu.mit.broad.marker.qvalue.QValue.qvalue(outputFileName);
 
 	}
 
@@ -414,7 +415,7 @@ public class MarkerSelection {
 
 			return a;
 		} catch(Exception e) {
-			GPUtil.exit("An error occurred while reading the permutations file.", e);
+			ModuleUtil.exit("An error occurred while reading the permutations file.", e);
 			return null;
 		}
 
@@ -432,7 +433,7 @@ public class MarkerSelection {
 			testClassPermutationsReader = new BufferedReader(new FileReader(
 					fileName));
 		} catch(Exception e) {
-			GPUtil.exit(
+			ModuleUtil.exit(
 					"An error occurred while reading the permutations file.",
 					e);
 		}

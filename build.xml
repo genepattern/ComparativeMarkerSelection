@@ -46,7 +46,7 @@
 		<antcall target="prezip"/>
 		
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
-			<fileset dir="." includes="version.txt, manifest, ${appfile}"/>
+			<fileset dir="." includes="version.txt, manifest, ${appfile}, ,qvalue.R"/>
 			<fileset dir="lib" includes="*.jar"/>
 			<fileset dir="." includes="*.pdf"/>
 		</zip>

@@ -1,17 +1,29 @@
 package edu.mit.broad.marker;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.table.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.event.TableModelListener;
+import javax.swing.table.TableModel;
+import java.util.StringTokenizer;
 import java.util.Vector;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import gnu.trove.*;
 import edu.mit.broad.modules.genelist.plot.*;
 import edu.mit.broad.modules.genelist.gc.*;
 import edu.mit.broad.modules.genelist.table.*;
 
 /**
- * @author     Joshua Gould
- * @created    September 17, 2004
+ *@author     Joshua Gould
+ *@created    September 17, 2004
  */
 public class MarkerSelectionFrame extends JFrame {
 	GPTable table;
@@ -30,7 +42,7 @@ public class MarkerSelectionFrame extends JFrame {
 	final static String[] COLUMN_NAMES = {"Feature", "Feature Specific P Value", "Rank Based P Value", "FWER", "FPR", "FDR (BH)"};
 
 
-	public MarkerSelectionFrame(Vector features, double[] geneSpecificPValues, double[] rankBasedPValues, double[] fwer, double[] fdr, double[] fpr) {
+	public MarkerSelectionFrame(Vector features, double[] rankBasedPValues, double[] geneSpecificPValues, double[] fwer, double[] fpr, double[] fdr) {
 		this.features = features;
 		this.geneSpecificPValues = geneSpecificPValues;
 		this.rankBasedPValues = rankBasedPValues;
@@ -96,6 +108,42 @@ public class MarkerSelectionFrame extends JFrame {
 	}
 
 
+	public static void main(String[] args) {
+		String inputFile = args[0];
+		Vector features = new Vector();
+		TDoubleArrayList rankBasedPValues = new TDoubleArrayList();
+		TDoubleArrayList geneSpecificPValues = new TDoubleArrayList();
+		TDoubleArrayList fwer = new TDoubleArrayList();
+		TDoubleArrayList fpr = new TDoubleArrayList();
+		TDoubleArrayList fdr = new TDoubleArrayList();
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader(inputFile));
+			String s = null;
+			while((s = br.readLine()) != null) {
+				StringTokenizer st = new StringTokenizer(s, "\t");
+				features.add(st.nextToken());
+				rankBasedPValues.add(Double.parseDouble(st.nextToken()));
+				geneSpecificPValues.add(Double.parseDouble(st.nextToken()));
+				fwer.add(Double.parseDouble(st.nextToken()));
+				fpr.add(Double.parseDouble(st.nextToken()));
+				fdr.add(Double.parseDouble(st.nextToken()));
+			}
+		} catch(Exception e) {
+			edu.mit.broad.gp.GPUtil.exit("An error occurred while reading the input file.", e);
+		}
+		if(br != null) {
+			try {
+				br.close();
+			} catch(Exception x){}
+		}
+		new MarkerSelectionFrame(features, rankBasedPValues.toNativeArray(), geneSpecificPValues.toNativeArray(), fwer.toNativeArray(), fpr.toNativeArray(), fdr.toNativeArray());
+	}
+
+
+	/**
+	 *@author    Joshua Gould
+	 */
 	static class MarkerSelectionPlot extends GPPlot {
 		public MarkerSelectionPlot() {
 			_padding = 0;
@@ -117,8 +165,8 @@ public class MarkerSelectionFrame extends JFrame {
 
 
 	/**
-	 * @author     Joshua Gould
-	 * @created    September 17, 2004
+	 *@author     Joshua Gould
+	 *@created    September 17, 2004
 	 */
 	class MyTableModel implements TableModel {
 
@@ -171,10 +219,10 @@ public class MarkerSelectionFrame extends JFrame {
 				return new Double(rankBasedPValues[rowIndex]);
 			} else if(columnIndex == 3) {
 				return new Double(fwer[rowIndex]);
-			} else if(columnIndex==4) {
+			} else if(columnIndex == 4) {
 				return new Double(fpr[rowIndex]);
 			} else {
-				return new Double(fdr[rowIndex]);	
+				return new Double(fdr[rowIndex]);
 			}
 		}
 

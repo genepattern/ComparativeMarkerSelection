@@ -20,9 +20,9 @@ public class UnbalancedCompletePermuter implements  Permuter {
 
 
 	public int[] next() {
-		int[] classOneIndices = combinationGenerator.getNext();
+		int[] classOneIndices = combinationGenerator.getNext(); // choose class one indices
 		int[] values = new int[size];
-		for(int i = 0; i < numClassZero; i++) {
+		for(int i = 0; i < classOneIndices.length; i++) {
 			values[classOneIndices[i]] = 1;
 		}
 		return values;

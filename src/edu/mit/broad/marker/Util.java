@@ -1,5 +1,5 @@
 package edu.mit.broad.marker;
-import edu.mit.broad.dataobj.Dataset;
+import edu.mit.broad.data.matrix.DoubleMatrix2D;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -142,7 +142,7 @@ public class Util {
 	}
 
 
-	public static double mean(Dataset dataset, int[] indices, int row) {
+	public static double mean(DoubleMatrix2D dataset, int[] indices, int row) {
 
 		double sum = 0;
 
@@ -154,30 +154,60 @@ public class Util {
 	}
 
 
-	public static double median(Dataset dataset, int[] indices, int row) {
-		double[] data = new double[indices.length];
-
+	public static double median(DoubleMatrix2D dataset, int[] indices, int row) {
+      double[] tempArray = new double[indices.length];
 		for(int j = 0; j < indices.length; j++) {
-			data[j] = dataset.get(row, indices[j]);
+			tempArray[j] = dataset.get(row, indices[j]);
 		}
-
-		java.util.Arrays.sort(data);
-		int half = indices.length / 2;
-		return data[half];
+      
+      java.util.Arrays.sort(tempArray);
+      int half = indices.length / 2;
+      if(indices.length%2==0) {
+         double k1 = tempArray[half];
+         double k2 = tempArray[half-1];
+         return (k1+k2)/2.0;
+      }
+		return tempArray[half];
 	}
 
 
-	public static void ttest(Dataset dataset,
+	public static void ttest(DoubleMatrix2D dataset,
 			int[] classOneIndices,
 			int[] class2Indices,
 			double[] scores, boolean fixStdDev) {
 
-		int rows = dataset.getRowDimension();
+		int rows = dataset.getRowCount();
 
 		for(int i = 0; i < rows; i++) {
 
 			double class1Mean = Util.mean(dataset, classOneIndices, i);
 			double class2Mean = Util.mean(dataset, class2Indices, i);
+			double class1Std = Util.standardDeviation(dataset, classOneIndices,
+					i, class1Mean);
+			double class2Std = Util.standardDeviation(dataset, class2Indices, i,
+					class2Mean);
+			if(fixStdDev) {
+				class1Std = fixStdDev(class1Std, class1Mean);
+				class2Std = fixStdDev(class2Std, class2Mean);
+			}
+			
+			
+			double Sxi = (class1Mean - class2Mean) / Math.sqrt((class1Std * class1Std / classOneIndices.length) + (class2Std * class2Std / class2Indices.length));
+			scores[i] = Sxi;
+		}
+	}
+   
+   public static void ttestMedian(DoubleMatrix2D dataset,
+			int[] classOneIndices,
+			int[] class2Indices,
+			double[] scores, boolean fixStdDev) {
+
+		int rows = dataset.getRowCount();
+
+		for(int i = 0; i < rows; i++) {
+
+			double class1Mean = Util.median(dataset, classOneIndices, i);
+			double class2Mean = Util.median(dataset, class2Indices, i);
 			double class1Std = Util.standardDeviation(dataset, classOneIndices,
 					i, class1Mean);
 			double class2Std = Util.standardDeviation(dataset, class2Indices, i,
@@ -208,12 +238,12 @@ public class Util {
 	}
 
 
-	public static void snr(Dataset dataset,
+	public static void snr(DoubleMatrix2D dataset,
 			int[] classOneIndices,
 			int[] class2Indices,
 			double[] scores, boolean fixStdDev) {
 
-		int rows = dataset.getRowDimension();
+		int rows = dataset.getRowCount();
 
 		for(int i = 0; i < rows; i++) {
 
@@ -233,9 +263,37 @@ public class Util {
 			scores[i] = Sxi;
 		}
 	}
+   
+  
+   public static void snrMedian(DoubleMatrix2D dataset,
+			int[] classOneIndices,
+			int[] class2Indices,
+			double[] scores, boolean fixStdDev) {
+
+		int rows = dataset.getRowCount();
+
+		for(int i = 0; i < rows; i++) {
+			double class1Mean = Util.median(dataset, classOneIndices, i);
+			double class2Mean = Util.median(dataset, class2Indices, i);
+			double class1Std = Util.standardDeviation(dataset, classOneIndices,
+					i, class1Mean);
+			double class2Std = Util.standardDeviation(dataset, class2Indices, i,
+					class2Mean);
+			if(fixStdDev) {
+						class1Std = fixStdDev(class1Std, class1Mean);
+						class2Std = fixStdDev(class2Std, class2Mean);
+					}
+					
+			double Sxi = (class1Mean - class2Mean) / (class1Std +
+					class2Std);
+			scores[i] = Sxi;
+		}
+	}
+   
+   
 
 
-	public static double signal2Noise(Dataset dataset, int[] classOneIndices,
+	/*public static double signal2Noise(DoubleMatrix2D dataset, int[] classOneIndices,
 			int[] class2Indices, int row) {
 
 		double mean1 = mean(dataset, classOneIndices, row);
@@ -244,10 +302,10 @@ public class Util {
 		double std2 = standardDeviation(dataset, class2Indices, row, mean2);
 
 		return (mean1 - mean2) / (std1 + std2);
-	}
+	}*/
 
 
-	public static double standardDeviation(Dataset dataset, int[] indices,
+	public static double standardDeviation(DoubleMatrix2D dataset, int[] indices,
 			int row, double mean) {
 
 		double sum = 0;

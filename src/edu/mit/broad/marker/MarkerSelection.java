@@ -320,6 +320,9 @@ public class MarkerSelection {
 		PrintWriter pw = null;
 
 		try {
+			if(!outputFileName.toLowerCase().endsWith(".odf")) {
+				outputFileName += ".odf";
+			}
 			pw = new PrintWriter(new FileWriter(outputFileName));
 			pw.println("ODF 1.0");
 			pw.println("HeaderLines=12");

@@ -367,6 +367,26 @@ public class MarkerSelection {
 				}
 			}
 		}
+		
+		try {
+			pw = new PrintWriter(new FileWriter("indices.txt"));
+			for(int i = 0; i < numFeatures; i++) {
+				if(i > 0) {
+					pw.print(" ");
+				}
+				pw.print(topFeaturesIndices[i]);
+			}
+			pw.println();
+		} catch(Exception e) {
+			GPUtil.exit("An error occurred while saving the output file.", e);
+		} finally {
+			if(pw != null) {
+				try {
+					pw.close();
+				} catch(Exception x) {
+				}
+			}
+		}
 	}
 
 

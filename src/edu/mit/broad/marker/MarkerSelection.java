@@ -14,8 +14,8 @@ import edu.mit.broad.io.microarray.*;
 import edu.mit.broad.marker.permutation.*;
 
 /**
- * @author     Joshua Gould
- * @created    September 17, 2004
+ *@author     Joshua Gould
+ *@created    September 17, 2004
  */
 public class MarkerSelection {
 
@@ -215,7 +215,7 @@ public class MarkerSelection {
 
 			statisticalMeasure.compute(dataset,
 					permutedClassZeroIndices,
-					permutedClassOneIndices, permutedScores, fixStdev);// compute scores using permuted class labels
+					permutedClassOneIndices, permutedScores, fixStdev); // compute scores using permuted class labels
 
 			for(int i = 0; i < N; i++) {
 				double score = scores[i];
@@ -232,7 +232,7 @@ public class MarkerSelection {
 			}
 
 			Util.sort(permutedScores, Util.DESCENDING);
-			
+
 			for(int i = 0; i < N; i++) {
 				double score = scores[descendingIndices[i]];
 
@@ -241,7 +241,7 @@ public class MarkerSelection {
 						if(permutedScores[i] >= score) {
 							rankBasedPValues[i] += 1.0;
 						}
-					} else {	
+					} else {
 						if(permutedScores[i] <= score) {
 							rankBasedPValues[i] += 1.0;
 						}
@@ -309,32 +309,53 @@ public class MarkerSelection {
 			fdr[i] = (p * N) / rank;
 		}
 
-		int[] sortedIndices = null;
+		int[] _ranks = null;
+
 		if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE || testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-			sortedIndices = descendingIndices;
+			_ranks = Util.rank(descendingIndices);
 		} else if(testDirection == TWO_SIDED) {
-			sortedIndices = descendingIndices;
+			_ranks = Util.rank(descendingAbsIndices);
 		}
 
 		PrintWriter pw = null;
 
 		try {
 			pw = new PrintWriter(new FileWriter(outputFileName));
-			pw.println("Feature\tScore\tGene Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR");
-			if(1==2) { //testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-				for(int i = N - 1; i >= 0; i--) {
-					int sortedIndex = sortedIndices[i];
-					int rank = N-i;
-					pw.println(rank + "\t" + dataset.getRowName(sortedIndex) + "\t" +
-							scores[sortedIndex] + "\t" + geneSpecificPValues[sortedIndex] + "\t " + fpr[sortedIndex] + "\t" + fwer[sortedIndex] + "\t" + rankBasedPValues[i] + "\t" + fdr[sortedIndex]);
-				}
+			pw.println("ODF 1.0");
+			pw.println("HeaderLines=10");
+			pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tGene Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR\tBonferroni");
+			pw.println("COLUMN_TYPES:int\tString\tdouble\tdouble\tdouble\tdouble\tdouble\tdouble\tdouble");
+			pw.println("Model=Comparative Marker Selection");
+			pw.println("Permutations=" + numPermutations);
+			pw.println("Balanced=" + balanced);
+			pw.println("Complete=" + complete);
+			if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
+				pw.println("Test=Class 0");
+			} else if(testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
+				pw.println("Test=Class 1");
 			} else {
-				for(int i = 0; i < N; i++) {
-					int sortedIndex = sortedIndices[i];
-					//int rank = i + 1;
-					pw.println(dataset.getRowName(sortedIndex) + "\t" +
-							scores[sortedIndex] + "\t" + geneSpecificPValues[sortedIndex] + "\t " + fpr[sortedIndex] + "\t" + fwer[sortedIndex] + "\t" + rankBasedPValues[i] + "\t" + fdr[sortedIndex]);
+				pw.println("Test=2 Sided");
+			}
+			if(metric == SNR) {
+				pw.println("Statistical Measure=SNR");
+			} else {
+				pw.println("Statistical Measure=T-Test");
+			}
+
+			pw.println("Fix Standard Deviation=" + fixStdev);
+			pw.println("DataLines=" + N);
+
+
+			for(int i = 0; i < N; i++) {
+				int index = descendingIndices[i];
+
+				int rank = _ranks[index];
+				if(testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
+					rank = N - rank + 1;
 				}
+				double bonferroni = Math.min(geneSpecificPValues[index] * N, 1.0);
+				pw.println(rank + "\t" + dataset.getRowName(index) + "\t" +
+						scores[index] + "\t" + geneSpecificPValues[index] + "\t " + fpr[index] + "\t" + fwer[index] + "\t" + rankBasedPValues[i] + "\t" + fdr[index] + "\t" + bonferroni);
 			}
 
 		} catch(Exception e) {
@@ -357,7 +378,7 @@ public class MarkerSelection {
 	/**
 	 *  Reads the next permutation from a file
 	 *
-	 * @return    the next permutation
+	 *@return    the next permutation
 	 */
 	int[] nextPermutation() {
 		try {
@@ -382,7 +403,7 @@ public class MarkerSelection {
 	/**
 	 *  Opens the permutations file for reading
 	 *
-	 * @param  fileName  the file name
+	 *@param  fileName  the file name
 	 */
 	void initFile(String fileName) {
 
@@ -398,8 +419,8 @@ public class MarkerSelection {
 
 
 	/**
-	 * @author     Joshua Gould
-	 * @created    September 29, 2004
+	 *@author     Joshua Gould
+	 *@created    September 29, 2004
 	 */
 	static class TTest implements StatisticalMeasure {
 		public void compute(Dataset dataset,
@@ -414,8 +435,8 @@ public class MarkerSelection {
 
 
 	/**
-	 * @author     Joshua Gould
-	 * @created    September 29, 2004
+	 *@author     Joshua Gould
+	 *@created    September 29, 2004
 	 */
 	static class SNR implements StatisticalMeasure {
 		public void compute(Dataset dataset,
@@ -430,8 +451,8 @@ public class MarkerSelection {
 
 
 	/**
-	 * @author     Joshua Gould
-	 * @created    September 29, 2004
+	 *@author     Joshua Gould
+	 *@created    September 29, 2004
 	 */
 	static interface StatisticalMeasure {
 		public void compute(Dataset dataset,

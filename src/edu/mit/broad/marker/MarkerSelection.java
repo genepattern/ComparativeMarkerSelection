@@ -233,7 +233,7 @@ public class MarkerSelection {
 
 			for(int i = 0; i < N; i++) {
 				double score = unpermutedScores[i];
-				if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE || testDirection == TWO_SIDED) {
+				if(testDirection == TWO_SIDED || testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
 					if(permutedScores[i] >= score) {
 						geneSpecificPValues[i] += 1.0;
 					}
@@ -254,7 +254,13 @@ public class MarkerSelection {
 			for(int i = 0; i < N; i++) {
 				double score = unpermutedScores[topFeaturesIndices[i]];
 
-				if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE || testDirection == TWO_SIDED) {
+				if(testDirection == TWO_SIDED) {
+					if(score >= 0 && permutedScores[i] >= score) {
+						rankBasedPValues[i] += 1.0;
+					} else if(permutedScores[i] <= score) {
+						rankBasedPValues[i] += 1.0;
+					}
+				} else if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
 					if(permutedScores[i] >= score) {
 						rankBasedPValues[i] += 1.0;
 					}

@@ -4,6 +4,10 @@ import java.io.*;
  *@author    Joshua Gould
  */
 public class Util {
+	public static int ASCENDING = 0;
+	public static int DESCENDING = 1;
+	public static int ABSOLUTE = 2;
+	
 	public static void print(double[] a) {
 		for(int i = 0; i < a.length; i++) {
 			System.out.print(a[i] + " ");
@@ -60,7 +64,14 @@ public class Util {
 	}
 
 
-	public int[] rank(int[] indices) {
+	public static void main(String[] args) {
+		double[] d = {7, 5, 10, 8};
+		int[] indices = getIndices(d, 1);
+		print(indices);
+		print(rank(indices));
+	}
+	
+	public static int[] rank(int[] indices) {
 		int[] rank = new int[indices.length];
 		for(int j = 0; j < indices.length; j++) {
 			rank[indices[j]] = j + 1;

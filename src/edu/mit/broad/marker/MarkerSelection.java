@@ -70,7 +70,9 @@ public class MarkerSelection {
 		this.classVector = _classVector;
 
 		GPUtil.checkDimensions(dataset, classVector);
-
+		if(classVector.levels() != 2) {
+			GPUtil.exit("Class file must contain 2 classes.");
+		}
 		this.numPermutations = _numPermutations;
 		this.testDirection = _side;
 		this.balanced = _balanced;
@@ -90,6 +92,11 @@ public class MarkerSelection {
 		} else {
 			GPUtil.exit("Unknown test statistic");
 		}
+
+		if(testDirection != CLASS_ZERO_GREATER_THAN_CLASS_ONE && testDirection != CLASS_ZERO_LESS_THAN_CLASS_ONE && testDirection != TWO_SIDED) {
+			GPUtil.exit("Unknown test direction.");
+		}
+
 		computePValues();
 
 		if(readPermutations) {
@@ -133,7 +140,6 @@ public class MarkerSelection {
 	void computePValues() {
 		int[] classZeroIndices = classVector.getIndices(0);
 		int[] classOneIndices = classVector.getIndices(1);
-
 		if(balanced) {
 			if(classZeroIndices.length != classOneIndices.length) {
 				GPUtil.exit(
@@ -148,7 +154,6 @@ public class MarkerSelection {
 						"The number of items in class 1 must be an even number for balanced permutations.");
 			}
 		}
-
 		scores = new double[N];
 
 		statisticalMeasure.compute(dataset,
@@ -349,7 +354,6 @@ public class MarkerSelection {
 
 			pw.println("Fix Standard Deviation=" + fixStdev);
 			pw.println("DataLines=" + N);
-
 
 			for(int i = 0; i < N; i++) {
 				int index = descendingIndices[i];

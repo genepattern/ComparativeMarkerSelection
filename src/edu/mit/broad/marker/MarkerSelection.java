@@ -6,10 +6,10 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.StringTokenizer;
 
-import edu.mit.broad.dataobj.*;
-import edu.mit.broad.dataobj.microarray.*;
-import edu.mit.broad.gp.ModuleUtil;
-import edu.mit.broad.io.microarray.*;
+import edu.mit.broad.data.matrix.*;
+import edu.mit.broad.data.expr.*;
+import edu.mit.broad.module.AnalysisUtil;
+import edu.mit.broad.io.expr.*;
 
 import edu.mit.broad.marker.permutation.*;
 
@@ -20,7 +20,7 @@ import edu.mit.broad.marker.permutation.*;
 public class MarkerSelection {
 
 	/**  input expression values */
-	Dataset dataset;
+	DoubleMatrix2D dataset;
 
 	/**  input classes */
 	ClassVector classVector;
@@ -37,6 +37,8 @@ public class MarkerSelection {
 	int metric;
 	final static int T_TEST = 0;
 	final static int SNR = 1;
+   final static int T_TEST_MEDIAN = 2;
+	final static int SNR_MEDIAN = 3;
 
 	/**  whether permutations are balanced */
 	boolean balanced;
@@ -65,49 +67,72 @@ public class MarkerSelection {
 	String datasetFile;
 	/** Input cls file name */
 	String clsFile;
+   
+   /** Covariate assignments */
+   ClassVector covariate;
+   
+   static Debugger debugger;
+   
+   static { "true".equalsIgnoreCase(System.getProperty("edu.mit.broad.marker.debug"));
+       debugger = new Debugger();
+   }
 	public MarkerSelection(String datasetFile, String clsFile,
 			int _numPermutations, int _side,
 			String _outputFileName, boolean _balanced,
-			boolean complete, boolean fixStdev, int metric, String permutationsFile) {
+			boolean complete, boolean fixStdev, int metric) {
 		this.datasetFile = datasetFile;
 		this.clsFile = clsFile;
-		ExpressionDataReader reader = ModuleUtil.getExpressionReader(datasetFile);
-		ExpressionDataImpl expressionData = null;
-		try {
-			expressionData = (ExpressionDataImpl) reader.read(datasetFile);
-		} catch(Exception e) {
-			ModuleUtil.exit("An error occurred while reading the file " + datasetFile, e);
-		}
+		IExpressionDataReader reader = AnalysisUtil.getExpressionReader(datasetFile);
+		ExpressionData expressionData = (ExpressionData) AnalysisUtil.readExpressionData(reader, datasetFile, new ExpressionDataCreator());
 		
 		this.dataset = expressionData.getExpressionMatrix();
-		this.classVector = ModuleUtil.readClassVector(clsFile);
-		
-		ModuleUtil.checkDimensions(dataset, classVector);
-		if(classVector.levels() != 2) {
-			ModuleUtil.exit("Class file must contain 2 classes.");
+		if(System.getProperty("edu.mit.broad.marker.internal")!=null && !clsFile.endsWith(".cls")) { // hidden feature
+         try {
+            ClassVector[] cv = new edu.mit.broad.internal.MultiClassReader().read(clsFile, expressionData);
+            this.classVector = cv[0];
+            if(cv.length > 1) {
+               covariate = cv[1];
+               for(int i = 2; i < cv.length; i++) {
+                  covariate = covariate.union(cv[i]);
+               }
+            }
+         } catch(Exception e) {
+            AnalysisUtil.exit("An error occurred while reading the file " + AnalysisUtil.getFileName(clsFile), e);
+         }
+      } else {
+         this.classVector = AnalysisUtil.readCls(clsFile);
+		}
+      
+		AnalysisUtil.checkDimensions(dataset, classVector);
+		if(classVector.getClassCount() != 2) {
+			AnalysisUtil.exit("Class file must contain 2 classes.");
 		}
 		this.numPermutations = _numPermutations;
 		this.testDirection = _side;
 		this.balanced = _balanced;
 		this.outputFileName = _outputFileName;
 		this.complete = complete;
-		this.N = dataset.getRowDimension();
+		this.N = dataset.getRowCount();
 		this.fixStdev = fixStdev;
 		this.metric = metric;
-		if(permutationsFile != null) {
-			readPermutations = true;
-			initFile(permutationsFile);
-		}
+	//	if(permutationsFile != null) {
+		//	readPermutations = true;
+		//	initFile(permutationsFile);
+		//}
 		if(metric == T_TEST) {
-			statisticalMeasure = new TTest();
-		} else if(metric == SNR) {
-			statisticalMeasure = new SNR();
-		} else {
-			ModuleUtil.exit("Unknown test statistic");
+         statisticalMeasure = new TTest();
+      } else if(metric== T_TEST_MEDIAN) {
+         statisticalMeasure = new TTestMedian();
+      } else if(metric == SNR) {
+         statisticalMeasure = new SNR();
+		} else if(metric == SNR_MEDIAN) {
+         statisticalMeasure = new SNRMedian();
+      } else {
+			AnalysisUtil.exit("Unknown test statistic");
 		}
 
 		if(testDirection != CLASS_ZERO_GREATER_THAN_CLASS_ONE && testDirection != CLASS_ZERO_LESS_THAN_CLASS_ONE && testDirection != TWO_SIDED) {
-			ModuleUtil.exit("Unknown test direction.");
+			AnalysisUtil.exit("Unknown test direction.");
 		}
 
 		computePValues();
@@ -135,15 +160,11 @@ public class MarkerSelection {
 		boolean complete = Boolean.valueOf(args[6]).booleanValue();
 		boolean fixStdev = Boolean.valueOf(args[7]).booleanValue();
 		int metric = Integer.parseInt(args[8]);
-		String permutationsFile = null;
-		if(args.length == 10) {
-			permutationsFile = args[9];
-		}
 	
 		new MarkerSelection(datasetFile,
 				clsFile,
 				_numPermutations, testDirection, outputFileName, balanced,
-				complete, fixStdev, metric, permutationsFile);
+				complete, fixStdev, metric);
 	}
 
 
@@ -152,15 +173,15 @@ public class MarkerSelection {
 		int[] classOneIndices = classVector.getIndices(1);
 		if(balanced) {
 			if(classZeroIndices.length != classOneIndices.length) {
-				ModuleUtil.exit(
+				AnalysisUtil.exit(
 						"The number of items in each class must be equal for balanced permutations.");
 			}
 			if((classZeroIndices.length % 2) != 0) {
-				ModuleUtil.exit(
+				AnalysisUtil.exit(
 						"The number of items in class 0 must be an even number for balanced permutations.");
 			}
 			if((classOneIndices.length % 2) != 0) {
-				ModuleUtil.exit(
+				AnalysisUtil.exit(
 						"The number of items in class 1 must be an even number for balanced permutations.");
 			}
 		}
@@ -171,8 +192,12 @@ public class MarkerSelection {
 				classOneIndices, scores, fixStdev);
 
 		Permuter permuter = null;
-
-		if(!complete && balanced) {
+      if(covariate!=null) {
+         permuter = new UnbalancedRandomCovariatePermuter(classVector, covariate);
+         if(complete || balanced) {
+            AnalysisUtil.exit("Covariate permuter not yet implemented for complete or balanced permutations.");
+         }
+      } else if(!complete && balanced) {
 			permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices);
 		} else if(!complete && !balanced) {
 			permuter = new UnbalancedRandomPermuter(classVector.size(), classVector.getIndices(1).length);
@@ -181,16 +206,16 @@ public class MarkerSelection {
 					classZeroIndices.length);
 			java.math.BigInteger totalPermutations = ((UnbalancedCompletePermuter) (permuter)).getTotal();
 			if((totalPermutations.compareTo(new java.math.BigInteger("" + Integer.MAX_VALUE))) == 1) {
-				ModuleUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
+				AnalysisUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
 			}
 			numPermutations = totalPermutations.intValue();
 		} else if(complete && balanced) {
 			permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices);
 			java.math.BigInteger totalPermutations = ((BalancedCompletePermuter) (permuter)).getTotal();
 			if((totalPermutations.compareTo(new java.math.BigInteger("" + Integer.MAX_VALUE))) == 1) {
-				ModuleUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
+				AnalysisUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
 			}
-		}
+		} 
 
 		int[] descendingIndices = Util.getIndices(scores, Util.DESCENDING);
 		double[] absoluteScores = (double[]) scores.clone();
@@ -204,30 +229,34 @@ public class MarkerSelection {
 		double[] fpr = new double[N];
 		double[] geneSpecificPValues = new double[N];
 		double[] permutedScores = new double[N];
-		int[] levels = {0, 1};
-
+		
 		for(int perm = 0; perm < numPermutations; perm++) {
-			int[] permutedAssignments = null;
 			int[] permutedClassZeroIndices = null;
 			int[] permutedClassOneIndices = null;
 
-			if(readPermutations) {
-				permutedAssignments = nextPermutation();
-				ClassVector temp = new ClassVector(permutedAssignments,
-						levels);
-				permutedClassZeroIndices = temp.getIndices(0);
-				permutedClassOneIndices = temp.getIndices(1);
-
-			} else {
-				permutedAssignments = permuter.next();
-				ClassVector temp = new ClassVector(permutedAssignments,
-						levels);
-
-				permutedClassZeroIndices = temp.getIndices(0);
-				permutedClassOneIndices = temp.getIndices(1);
-
-			}
-
+			int[] permutedAssignments = permuter.next();
+         if(debugger!=null) {
+            debugger.addAssignment(permutedAssignments);
+         }
+         java.util.List zeroIndices = new java.util.ArrayList();
+         java.util.List oneIndices = new java.util.ArrayList();
+         for(int i = 0, length = permutedAssignments.length; i < length; i++) {
+            if(permutedAssignments[i]==0) {
+               zeroIndices.add(new Integer(i));
+            } else {
+               oneIndices.add(new Integer(i));
+            }
+         }
+         permutedClassZeroIndices = new int[zeroIndices.size()]; 
+         for(int i = 0, length = permutedClassZeroIndices.length; i < length; i++) {
+            permutedClassZeroIndices[i] =  ((Integer)zeroIndices.get(i)).intValue();
+         }
+         
+         permutedClassOneIndices = new int[oneIndices.size()]; 
+         for(int i = 0, length = permutedClassOneIndices.length; i < length; i++) {
+            permutedClassOneIndices[i] =  ((Integer)oneIndices.get(i)).intValue();
+         }
+		
 			statisticalMeasure.compute(dataset,
 					permutedClassZeroIndices,
 					permutedClassOneIndices, permutedScores, fixStdev); // compute scores using permuted class labels
@@ -318,9 +347,8 @@ public class MarkerSelection {
 		}
 
 		for(int i = 0; i < N; i++) {
-			int index = i;
-			int rank = ranks[index];
-			double p = geneSpecificPValues[index];
+			int rank = ranks[i];
+			double p = geneSpecificPValues[i];
 			fdr[i] = (p * N) / rank;
 		}
 
@@ -344,8 +372,8 @@ public class MarkerSelection {
 			pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tGene Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR(BH)\tBonferroni\tQ Value");
 			pw.println("COLUMN_TYPES:int\tString\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat");
 			pw.println("Model=Comparative Marker Selection");
-			pw.println("Dataset File=" + ModuleUtil.getFileName(datasetFile));
-			pw.println("Class File=" + ModuleUtil.getFileName(clsFile));
+			pw.println("Dataset File=" + AnalysisUtil.getFileName(datasetFile));
+			pw.println("Class File=" + AnalysisUtil.getFileName(clsFile));
 			pw.println("Permutations=" + numPermutations);
 			pw.println("Balanced=" + balanced);
 			pw.println("Complete=" + complete);
@@ -365,6 +393,7 @@ public class MarkerSelection {
 			}
 
 			pw.println("Fix Standard Deviation=" + fixStdev);
+        
 		//	pw.println("DataLines=" + N); added by R code
 
 			for(int i = 0; i < N; i++) {
@@ -380,7 +409,7 @@ public class MarkerSelection {
 			}
 			
 		} catch(Exception e) {
-			ModuleUtil.exit("An error occurred while saving the output file.", e);
+			AnalysisUtil.exit("An error occurred while saving the output file.", e);
 		} finally {
 
 			if(pw != null) {
@@ -392,7 +421,9 @@ public class MarkerSelection {
 			}
 		}
 		edu.mit.broad.marker.qvalue.QValue.qvalue(outputFileName);
-
+      if(debugger!=null) {
+         debugger.print();  
+      }
 	}
 
 
@@ -406,7 +437,7 @@ public class MarkerSelection {
 		try {
 			String s = testClassPermutationsReader.readLine();
 			StringTokenizer st = new StringTokenizer(s, " \t");
-			int cols = dataset.getColumnDimension();
+			int cols = dataset.getColumnCount();
 			int[] a = new int[cols];
 
 			for(int j = 0; j < cols; j++) {
@@ -415,7 +446,7 @@ public class MarkerSelection {
 
 			return a;
 		} catch(Exception e) {
-			ModuleUtil.exit("An error occurred while reading the permutations file.", e);
+			AnalysisUtil.exit("An error occurred while reading the permutations file.", e);
 			return null;
 		}
 
@@ -433,19 +464,14 @@ public class MarkerSelection {
 			testClassPermutationsReader = new BufferedReader(new FileReader(
 					fileName));
 		} catch(Exception e) {
-			ModuleUtil.exit(
+			AnalysisUtil.exit(
 					"An error occurred while reading the permutations file.",
 					e);
 		}
 	}
 
-
-	/**
-	 *@author     Joshua Gould
-	 *@created    September 29, 2004
-	 */
 	static class TTest implements StatisticalMeasure {
-		public void compute(Dataset dataset,
+		public void compute(DoubleMatrix2D dataset,
 				int[] classZeroIndices,
 				int[] classOneIndices, double[] scores, boolean fixStdev) {
 			Util.ttest(dataset,
@@ -454,14 +480,21 @@ public class MarkerSelection {
 
 		}
 	}
+   
+   static class TTestMedian implements StatisticalMeasure {
+		public void compute(DoubleMatrix2D dataset,
+				int[] classZeroIndices,
+				int[] classOneIndices, double[] scores, boolean fixStdev) {
+			Util.ttestMedian(dataset,
+					classZeroIndices,
+					classOneIndices, scores, fixStdev);
 
+		}
+	}
 
-	/**
-	 *@author     Joshua Gould
-	 *@created    September 29, 2004
-	 */
+	
 	static class SNR implements StatisticalMeasure {
-		public void compute(Dataset dataset,
+		public void compute(DoubleMatrix2D dataset,
 				int[] classZeroIndices,
 				int[] classOneIndices, double[] scores, boolean fixStdev) {
 			Util.snr(dataset,
@@ -470,17 +503,50 @@ public class MarkerSelection {
 
 		}
 	}
+   
+   static class SNRMedian implements StatisticalMeasure {
+      
+		public void compute(DoubleMatrix2D dataset,
+				int[] classZeroIndices,
+				int[] classOneIndices, double[] scores, boolean fixStdev) {
+			Util.snrMedian(dataset,
+					classZeroIndices,
+					classOneIndices, scores, fixStdev);
 
+		}
+	}
 
-	/**
-	 *@author     Joshua Gould
-	 *@created    September 29, 2004
-	 */
 	static interface StatisticalMeasure {
-		public void compute(Dataset dataset,
+		public void compute(DoubleMatrix2D dataset,
 				int[] classZeroIndices,
 				int[] classOneIndices, double[] scores, boolean fixStdev);
 	}
+   
+   static class Debugger {
+      java.util.Map assignment2Occurences = new java.util.HashMap();
+      
+      public static String toString(int[] a) {
+         StringBuffer buf = new StringBuffer();
+         for(int i = 0; i < a.length; i++) {
+            buf.append(a[i]);  
+         }
+         return buf.toString();
+      }
+      
+      public void addAssignment(int[] a) {
+         String s = toString(a);
+         Integer occurences = (Integer) assignment2Occurences.get(s);
+         if(occurences==null) {
+            occurences = new Integer(0);
+         }
+         assignment2Occurences.put(s, new Integer(occurences.intValue()+1));
+      }
+      
+      public void print() {
+         System.out.println("permutations");
+         System.out.println(assignment2Occurences);
+      }
+   }
 
 }
 

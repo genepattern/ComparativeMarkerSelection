@@ -228,7 +228,7 @@ public class MarkerSelection {
 			permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices);
 		} else if(!complete && !balanced) {
 			int[] classAssignments = classVector.getAssignments();
-			permuter = new UnbalancedRandomPermuter(classAssignments);
+			permuter = new UnbalancedRandomPermuter(classVector.size(), classVector.getIndices(1).length);
 		} else if(complete && !balanced) {
 			permuter = new UnbalancedCompletePermuter(classVector.size(),
 					classZeroIndices.length);

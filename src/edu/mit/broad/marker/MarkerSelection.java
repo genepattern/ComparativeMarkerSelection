@@ -322,7 +322,7 @@ public class MarkerSelection {
 		try {
 			pw = new PrintWriter(new FileWriter(outputFileName));
 			pw.println("ODF 1.0");
-			pw.println("HeaderLines=10");
+			pw.println("HeaderLines=12");
 			pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tGene Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR\tBonferroni");
 			pw.println("COLUMN_TYPES:int\tString\tdouble\tdouble\tdouble\tdouble\tdouble\tdouble\tdouble");
 			pw.println("Model=Comparative Marker Selection");
@@ -336,6 +336,8 @@ public class MarkerSelection {
 			} else {
 				pw.println("Test=2 Sided");
 			}
+			pw.println("Class 0=" + classVector.getClassName(0));
+			pw.println("Class 1=" + classVector.getClassName(1));
 			if(metric == SNR) {
 				pw.println("Statistical Measure=SNR");
 			} else {

@@ -1,5 +1,9 @@
 package edu.mit.broad.marker;
-import java.io.*;
+import edu.mit.broad.dataobj.Dataset;
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 /**
  *@author    Joshua Gould
  */
@@ -111,6 +115,60 @@ public class Util {
 		System.out.println();
 	}
 
+	public static double mean(Dataset dataset, int[] indices, int row) {
+
+		double sum = 0;
+
+		for(int j = 0; j < indices.length; j++) {
+			sum += dataset.get(row, indices[j]);
+		}
+
+		return sum / indices.length;
+	}
+
+
+	public static double median(Dataset dataset, int[] indices, int row) {
+		double[] data = new double[indices.length];
+
+		for(int j = 0; j < indices.length; j++) {
+			data[j] = dataset.get(row, indices[j]);
+		}
+
+		java.util.Arrays.sort(data);
+		int half = indices.length / 2;
+		return data[half];
+	}
+
+
+	public static double signal2Noise(Dataset dataset, int[] classOneIndices,
+			int[] class2Indices, int row) {
+
+		double mean1 = mean(dataset, classOneIndices, row);
+		double mean2 = mean(dataset, class2Indices, row);
+		double std1 = standardDeviation(dataset, classOneIndices, row, mean1);
+		double std2 = standardDeviation(dataset, class2Indices, row, mean2);
+
+		return (mean1 - mean2) / (std1 + std2);
+	}
+
+
+	public static double standardDeviation(Dataset dataset, int[] indices,
+			int row, double mean) {
+
+		double sum = 0;
+
+		for(int j = 0; j < indices.length; j++) {
+
+			double x = dataset.get(row, indices[j]);
+			double diff = x - mean;
+			diff = diff * diff;
+			sum += diff;
+		}
+
+		double variance = sum / (indices.length - 1);
+
+		return Math.sqrt(variance);
+	}
 
 	/**
 	 *@author    Joshua Gould

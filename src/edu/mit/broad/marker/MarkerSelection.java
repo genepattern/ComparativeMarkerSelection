@@ -46,7 +46,10 @@ public class MarkerSelection {
 	boolean complete;
 	/**  whether to read permutations from a file */
 	boolean readPermutations = false;
+	/** reader when reading permutations from file */
 	BufferedReader testClassPermutationsReader;
+	
+	/** name of output file */
 	String outputFileName;
 
 	double[][] rankBasedScores;
@@ -58,19 +61,25 @@ public class MarkerSelection {
 	/** sorted indices in the input dataset of the top numFeatures */
 	int[] topFeaturesIndices;
 
+	/** number of rows in input data */
+	int N;
 	public MarkerSelection(Dataset _dataset, ClassVector _classVector,
 			int _numFeatures, int _numPermutations, int _side,
 			String _outputFileName, boolean _balanced,
 			boolean complete, String permutationsFile) {
 		this.dataset = _dataset;
 		this.classVector = _classVector;
+		
+		GPUtil.checkDimensions(dataset, classVector);
+		
 		this.numFeatures = _numFeatures;
 		this.numPermutations = _numPermutations;
 		this.side = _side;
 		this.balanced = _balanced;
 		this.outputFileName = _outputFileName;
 		this.complete = complete;
-
+		this.N = dataset.getRowDimension();
+		
 		if(permutationsFile != null) {
 			readPermutations = true;
 			initFile(permutationsFile);
@@ -91,60 +100,7 @@ public class MarkerSelection {
 	}
 
 
-	public static double mean(Dataset dataset, int[] indices, int row) {
-
-		double sum = 0;
-
-		for(int j = 0; j < indices.length; j++) {
-			sum += dataset.get(row, indices[j]);
-		}
-
-		return sum / indices.length;
-	}
-
-
-	public static double median(Dataset dataset, int[] indices, int row) {
-		double[] data = new double[indices.length];
-
-		for(int j = 0; j < indices.length; j++) {
-			data[j] = dataset.get(row, indices[j]);
-		}
-
-		Arrays.sort(data);
-		int half = indices.length / 2;
-		return data[half];
-	}
-
-
-	public static double signal2Noise(Dataset dataset, int[] classOneIndices,
-			int[] class2Indices, int row) {
-
-		double mean1 = mean(dataset, classOneIndices, row);
-		double mean2 = mean(dataset, class2Indices, row);
-		double std1 = standardDeviation(dataset, classOneIndices, row, mean1);
-		double std2 = standardDeviation(dataset, class2Indices, row, mean2);
-
-		return (mean1 - mean2) / (std1 + std2);
-	}
-
-
-	public static double standardDeviation(Dataset dataset, int[] indices,
-			int row, double mean) {
-
-		double sum = 0;
-
-		for(int j = 0; j < indices.length; j++) {
-
-			double x = dataset.get(row, indices[j]);
-			double diff = x - mean;
-			diff = diff * diff;
-			sum += diff;
-		}
-
-		double variance = sum / (indices.length - 1);
-
-		return Math.sqrt(variance);
-	}
+	
 
 
 	boolean containsAtLeastOneGreater(double score, double[] values) {
@@ -230,7 +186,7 @@ public class MarkerSelection {
 		
 		GeneSpecificFeatureSelector geneSpecificFeatureSelector = new GeneSpecificFeatureSelector();
 		
-		unpermutedScores = new double[dataset.getRowDimension()];
+		unpermutedScores = new double[N];
 		
 		geneSpecificFeatureSelector.compute(dataset,
 				classZeroIndices,
@@ -251,7 +207,6 @@ public class MarkerSelection {
 		if(!complete && balanced) {
 			permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices);
 		} else if(!complete && !balanced) {
-			int[] classAssignments = classVector.getAssignments();
 			permuter = new UnbalancedRandomPermuter(classVector.size(), classVector.getIndices(1).length);
 		} else if(complete && !balanced) {
 			permuter = new UnbalancedCompletePermuter(classVector.size(),
@@ -271,11 +226,11 @@ public class MarkerSelection {
 		
 		rankBasedScores = new double[numFeatures][numPermutations]; // FIXME
 		
-		geneSpecificScores = new double[dataset.getRowDimension()][numPermutations]; // FIXME
+		geneSpecificScores = new double[N][numPermutations]; // FIXME
 		double[] fwer = new double[numFeatures];
-		double[] fpr = new double[dataset.getRowDimension()];
+		double[] fpr = new double[N];
 		
-		double[] permutedScores = new double[dataset.getRowDimension()];
+		double[] permutedScores = new double[N];
 		int[] levels = {0, 1};
 		
 		for(int perm = 0; perm < numPermutations; perm++) {
@@ -304,7 +259,7 @@ public class MarkerSelection {
 					permutedClassZeroIndices,
 					permutedClassOneIndices, permutedScores); // compute scores using permuted class labels
 			
-			for(int i = 0; i < dataset.getRowDimension(); i++) {
+			for(int i = 0; i < N; i++) {
 				geneSpecificScores[i][perm] = permutedScores[i];
 			}
 
@@ -330,7 +285,7 @@ public class MarkerSelection {
 					fwer[i] = fwer[i] + 1.0;
 				}
 			}
-			for(int i =0; i < dataset.getRowDimension(); i++) {
+			for(int i =0; i < N; i++) {
 				fpr[i] += countNumberGreater(unpermutedScores[i], permutedScores);
 			}
 		}
@@ -338,23 +293,35 @@ public class MarkerSelection {
 		for(int i = 0; i < numFeatures; i++) {
 			fwer[i] /= numPermutations;
 		}
-		for(int i = 0; i < dataset.getRowDimension(); i++) {
-			fpr[i] /= dataset.getRowDimension();
+		
+		for(int i = 0; i < N; i++) {
+			fpr[i] /= N;
 			fpr[i] /= numPermutations;
 		}
+		
 		double[] rankBasedPValues = computeRankBasedPValues();
 		double[] geneSpecificPValues = computeGeneSpecificPValues();
 
 		double[] fdr = new double[numFeatures];
 		int[] pValueIndices = Util.getIndices(fpr, Util.ASCENDING);
-		int[] ranks = Util.rank(pValueIndices); // FIXME ties
-		double N = dataset.getRowDimension();
+		int[] ranks = Util.rank(pValueIndices);
+		
+		
+		// check for ties
+		for(int i = pValueIndices.length-1; i > 0; i--) {
+			double bigPValue = fpr[pValueIndices[i]];
+			double smallPValue = fpr[pValueIndices[i-1]];
+			if(bigPValue==smallPValue) {
+				ranks[pValueIndices[i-1]] = ranks[pValueIndices[i]];
+			}
+		}
+		
 		
 		for(int i = 0; i < numFeatures; i++) {
 			int index = topFeaturesIndices[i];
 			int rank = ranks[index];
 			double p = fpr[index];
-			fdr[i] = p * N/rank;
+			fdr[i] = (p * N)/rank;
 		}
 		
 		PrintWriter pw = null;
@@ -425,8 +392,8 @@ public class MarkerSelection {
 	}
 	
 	double[] computeGeneSpecificPValues() {
-		double[] geneSpecificPValues = new double[dataset.getRowDimension()];
-			for(int i = 0; i < dataset.getRowDimension(); i++) {
+		double[] geneSpecificPValues = new double[N];
+			for(int i = 0; i < N; i++) {
 				double score = unpermutedScores[i];
 				for(int j = 0; j < numPermutations; j++) {
 					if(side==CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
@@ -449,6 +416,9 @@ public class MarkerSelection {
 		return geneSpecificPValues;
 	}
 
+	/** 
+	* Reads the next permutation from a file 
+	*/
 	int[] nextPermutation() {
 		try {
 			String s = testClassPermutationsReader.readLine();
@@ -468,6 +438,7 @@ public class MarkerSelection {
 		
 	}
 	
+	/** Opens the permutations file for reading */
 	void initFile(String fileName) {
 
 		try {
@@ -481,54 +452,8 @@ public class MarkerSelection {
 	}
 
 
-	static double[] computeOneSidedPValues(double[] actualScores,
-			double[][] permutedScores, int side, int numFeatures,  int numPermutations) {
-
-		double[] oneSidedPValues = new double[numFeatures];
-
-		for(int i = 0; i < numFeatures; i++) {
-			for(int j = 0; j < numPermutations; j++) {
-				if(side == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
-					if(permutedScores[i][j] >= actualScores[i]) {
-						oneSidedPValues[i] = oneSidedPValues[i] + 1;
-					}
-				} else {
-					if(permutedScores[i][j] <= actualScores[i]) {
-						oneSidedPValues[i] = oneSidedPValues[i] + 1;
-					}
-				}
-			}
-
-			oneSidedPValues[i] = oneSidedPValues[i] / (double) numPermutations;
-		}
-
-		return oneSidedPValues;
-	}
-
-
-	double[] computeTwoSidedPValues(double[] actualScores,
-			double[][] permutedScores, int numFeatures) {
-
-		double[] twoSidedPValues = new double[numFeatures];
-
-		for(int i = 0; i < numFeatures; i++) {
-
-			for(int j = 0; j < numPermutations; j++) {
-
-				if(Math.abs(permutedScores[i][j]) >= Math.abs(actualScores[i])) {
-					twoSidedPValues[i] = twoSidedPValues[i] + 1;
-				}
-			}
-
-			twoSidedPValues[i] = twoSidedPValues[i] / (double) numPermutations;
-		}
-
-		return twoSidedPValues;
-	}
-
 	/**
 	 *@author     Joshua Gould
-	 *@created    September 17, 2004
 	 */
 	static class GeneSpecificFeatureSelector {
 
@@ -541,11 +466,11 @@ public class MarkerSelection {
 
 			for(int i = 0; i < rows; i++) {
 
-				double class1Mean = mean(dataset, classOneIndices, i);
-				double class2Mean = mean(dataset, class2Indices, i);
-				double class1Std = standardDeviation(dataset, classOneIndices,
+				double class1Mean = Util.mean(dataset, classOneIndices, i);
+				double class2Mean = Util.mean(dataset, class2Indices, i);
+				double class1Std = Util.standardDeviation(dataset, classOneIndices,
 						i, class1Mean);
-				double class2Std = standardDeviation(dataset, class2Indices, i,
+				double class2Std = Util.standardDeviation(dataset, class2Indices, i,
 						class2Mean);
 				double Sxi = (class1Mean - class2Mean) / (class1Std +
 						class2Std);

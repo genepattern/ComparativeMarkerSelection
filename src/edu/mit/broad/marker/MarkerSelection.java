@@ -305,13 +305,13 @@ public class MarkerSelection {
 		}
 
 		double[] fdr = new double[N];
-		int[] pValueIndices = Util.getIndices(fpr, Util.ASCENDING);
+		int[] pValueIndices = Util.getIndices(geneSpecificPValues, Util.ASCENDING);
 		int[] ranks = Util.rank(pValueIndices);
 
 		// check for ties
 		for(int i = pValueIndices.length - 1; i > 0; i--) {
-			double bigPValue = fpr[pValueIndices[i]];
-			double smallPValue = fpr[pValueIndices[i - 1]];
+			double bigPValue = geneSpecificPValues[pValueIndices[i]];
+			double smallPValue = geneSpecificPValues[pValueIndices[i - 1]];
 			if(bigPValue == smallPValue) {
 				ranks[pValueIndices[i - 1]] = ranks[pValueIndices[i]];
 			}
@@ -320,7 +320,7 @@ public class MarkerSelection {
 		for(int i = 0; i < N; i++) {
 			int index = i;
 			int rank = ranks[index];
-			double p = fpr[index];
+			double p = geneSpecificPValues[index];
 			fdr[i] = (p * N) / rank;
 		}
 

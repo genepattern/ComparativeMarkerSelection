@@ -1,35 +1,45 @@
 package edu.mit.broad.marker.permutation;
 
-import java.util.*;
+
 
 public class BalancedCompletePermuter implements Permuter {
-	Random rand;
-	int[] assignments;
-	int permutations;
+	CombinationGenerator comb1;
+	CombinationGenerator comb2;
+	int[] comb1Indices;
+	int[] classZeroIndices;
+	int[] classOneIndices;
 	
-	public BalancedCompletePermuter(int i, int j, int[] assignments) {
-		this.assignments = assignments;
-		rand = new Random(3);
-		permutations = (int) getNumBalancedPermutations();
+	public BalancedCompletePermuter(int[] classZeroIndices, int[] classOneIndices) {
+		this.classZeroIndices = classZeroIndices;
+		this.classOneIndices = classOneIndices;
+		comb1 = new CombinationGenerator(classOneIndices.length, classOneIndices.length/2);
+		comb2 = new CombinationGenerator(classOneIndices.length, classOneIndices.length/2);
+		comb1Indices = comb1.getNext();
 	}
 
 	public int[] next() {
-		throw new RuntimeException();
+		int[] values = new int[classOneIndices.length*2];
+		//edu.mit.broad.marker.Util.print(comb1Indices);
+		for(int i = 0; i < comb1Indices.length; i++) {
+			values[classOneIndices[comb1Indices[i]]] = 1;
+		}
 		
+		int[] indices = comb2.getNext();
+		for(int i = 0; i < indices.length; i++) {
+			values[classZeroIndices[indices[i]]] = 1;
+		}
+		if(!comb2.hasMore()) {
+			comb2.reset();
+			if(comb1.hasMore()) {
+				comb1Indices = comb1.getNext();
+			}
+		}
+		return values;
 	}
 	
-	public int getTotal() {
-		return permutations;	
-	}
 	
-	private long getNumBalancedPermutations() {
-		return 0;
-		/*int numClassZero = classVector.getIndices(0).length;
-
-		return cern.jet.math.Arithmetic.longFactorial(classVector.size()) / cern.jet.math.Arithmetic.longFactorial(
-				numClassZero / 2);
-				*/
+	public java.math.BigInteger getTotal() {
+		return comb1.getTotal().multiply(comb2.getTotal());
 	}
-	
   
 }

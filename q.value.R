@@ -2,13 +2,8 @@ compute.q.values <- function(p.value.file='p.values.txt', indices.file='indices.
 	#on.exit(unlink(c(p.value.file, indices.file, previous.task.values)))
 	library(qvalue)
 	
-	p.values <- read.table(p.value.file)[1,]
-	p.values.vector <- vector()
-	for(i in 1:length(p.values)) {
-		p.values.vector[i] <- as.numeric(p.values[[i]])
-	}
-	print(p.values.vector)
-	result <- qvalue(p.values.vector)
+	p.values <-scan(p.value.file)
+	result <- qvalue(p.values)
 	qvalues <- result$qvalues
 	
 	previous.values <- read.table(previous.task.values, sep="\t")
@@ -17,7 +12,7 @@ compute.q.values <- function(p.value.file='p.values.txt', indices.file='indices.
 		m[, i] <- previous.values[,i]
 	}
 
-	indices <- read.table(indices.file)[1,]
+	indices <- scan(indices.file)
 	last.column <- NCOL(previous.values)+1
 	for(i in 1:NROW(previous.values)) {
 		m[i, last.column] <- qvalues[indices[[i]]+1]

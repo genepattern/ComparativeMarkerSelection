@@ -14,8 +14,8 @@ import edu.mit.broad.io.microarray.*;
 import edu.mit.broad.marker.permutation.*;
 
 /**
- * @author     Joshua Gould
- * @created    September 17, 2004
+ *@author     Joshua Gould
+ *@created    September 17, 2004
  */
 public class MarkerSelection {
 
@@ -50,11 +50,17 @@ public class MarkerSelection {
 	int[][] testAssignments;
 	String outputFileName;
 
+	double[][] rankBasedScores;
+	double[][] geneSpecificScores;
+
+	/**  sorted unpermuted scores for the top numFeatures */
+	double[] scores;
+
 
 	public MarkerSelection(Dataset _dataset, ClassVector _classVector,
 			int _numFeatures, int _numPermutations, int _side,
 			String _outputFileName, boolean _balanced,
-			boolean complete) {
+			boolean complete, String permutationsFile) {
 		this.dataset = _dataset;
 		this.classVector = _classVector;
 		this.numFeatures = _numFeatures;
@@ -64,14 +70,12 @@ public class MarkerSelection {
 		this.outputFileName = _outputFileName;
 		this.complete = complete;
 
-		String permutationsFile = System.getProperty("permutations");
-
 		if(permutationsFile != null) {
 			readPermutations = true;
 			readPermutations(permutationsFile);
 		}
 
-		run();
+		computePValues();
 
 		if(readPermutations) {
 
@@ -142,6 +146,31 @@ public class MarkerSelection {
 	}
 
 
+	boolean containsAtLeastOneGreater(double score, double[] values) {
+		for(int i = 0; i < values.length; i++) {
+			if(Math.abs(values[i]) >= score) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+
+	int countColumnsGreaterThan(double score, double[][] values) {
+		int count = 0;
+		for(int j = numPermutations - 1; j >= 0; j--) {
+			boolean found = false;
+			for(int i = 0; i < values.length; i++) {
+				if(Math.abs(values[i][j]) >= score) {
+					count++;
+					break;
+				}
+			}
+		}
+		return count;
+	}
+
+
 	public static void main(String[] args)
 			 throws Exception {
 
@@ -153,12 +182,16 @@ public class MarkerSelection {
 		String outputFileName = args[5];
 		boolean balanced = Boolean.valueOf(args[6]).booleanValue();
 		boolean complete = Boolean.valueOf(args[7]).booleanValue();
+		String permutationsFile = null;
+		if(args.length==9) {
+			permutationsFile = args[8];
+		}
 		ExpressionDataReader reader = GPUtil.getExpressionReader(datasetFile);
 		ExpressionDataImpl e = (ExpressionDataImpl) reader.read(datasetFile);
 		new MarkerSelection(e.getExpressionMatrix(),
 				GPUtil.getClassVector(clsFile), _numFeatures,
 				_numPermutations, side, outputFileName, balanced,
-				complete);
+				complete, permutationsFile);
 	}
 
 
@@ -173,17 +206,9 @@ public class MarkerSelection {
 	}
 
 
-	void run() {
-		int[] classZeroIndices = null;
-		int[] classOneIndices = null;
-
-		if(side == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-			classZeroIndices = classVector.getIndices(1);
-			classOneIndices = classVector.getIndices(0);
-		} else {
-			classZeroIndices = classVector.getIndices(0);
-			classOneIndices = classVector.getIndices(1);
-		}
+	void computePValues() {
+		int[] classZeroIndices = classVector.getIndices(0);
+		int[] classOneIndices = classVector.getIndices(1);
 
 		if(balanced) {
 
@@ -203,25 +228,19 @@ public class MarkerSelection {
 			}
 		}
 
-		RankFeatureSelector datasetFeatureSelector = new RankFeatureSelector(numFeatures,
+		RankFeatureSelector topFeatureSelector = new RankFeatureSelector(numFeatures,
 				dataset,
 				classZeroIndices,
-				classOneIndices, side == TWO_SIDED);
-		Dataset topFeaturesDataset = dataset.slice(
-				datasetFeatureSelector.sortedIndices,
-				null);
+				classOneIndices, side); // select the top numFeatures from the input dataset
+
+		scores = topFeatureSelector.Sx;
 
 		Permuter permuter = null;
 
 		if(!complete && balanced) {
 			permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices);
 		} else if(!complete && !balanced) {
-			int[] classAssignments = null;
-			if(side == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-				classAssignments = invert(classVector);
-			} else {
-				classAssignments = classVector.getAssignments();
-			}
+			int[] classAssignments = classVector.getAssignments();
 			permuter = new UnbalancedRandomPermuter(classAssignments);
 		} else if(complete && !balanced) {
 			permuter = new UnbalancedCompletePermuter(classVector.size(),
@@ -230,15 +249,16 @@ public class MarkerSelection {
 			if((totalPermutations.compareTo(new java.math.BigInteger("" + Integer.MAX_VALUE))) == 1) {
 				GPUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
 			}
-			numPermutations  = totalPermutations.intValue();
+			numPermutations = totalPermutations.intValue();
 		} else if(complete && balanced) {
 			GPUtil.exit("Algorithm not yet implemented for complete and balanced permutations.");
 		}
-		double[][] rankBasedScores = new double[numFeatures][numPermutations];
-		double[][] geneSpecificScores = new double[numFeatures][numPermutations];
-
+		rankBasedScores = new double[numFeatures][numPermutations]; // FIXME
+		geneSpecificScores = new double[numFeatures][numPermutations]; // FIXME
+		double[] fwer = new double[numFeatures];
+		final double[] permutedScores = new double[dataset.getRowDimension()];
+		int[] levels = {0, 1};
 		for(int perm = 0; perm < numPermutations; perm++) {
-
 			int[] permutedAssignments = null;
 			int[] permutedClassZeroIndices = null;
 			int[] permutedClassOneIndices = null;
@@ -247,87 +267,72 @@ public class MarkerSelection {
 				permutedAssignments = testAssignments[perm];
 
 				ClassVector temp = new ClassVector(permutedAssignments,
-						new int[]{0, 1});
+						levels);
+				permutedClassZeroIndices = temp.getIndices(0);
+				permutedClassOneIndices = temp.getIndices(1);
 
-				if(side == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-					permutedClassZeroIndices = temp.getIndices(1);
-					permutedClassOneIndices = temp.getIndices(0);
-				} else {
-					permutedClassZeroIndices = temp.getIndices(0);
-					permutedClassOneIndices = temp.getIndices(1);
-				}
 			} else {
 				permutedAssignments = permuter.next();
 				ClassVector temp = new ClassVector(permutedAssignments,
-						new int[]{0, 1});
+						levels);
 
 				permutedClassZeroIndices = temp.getIndices(0);
 				permutedClassOneIndices = temp.getIndices(1);
 
 			}
 
-			RankFeatureSelector rankFeatureSelector = new RankFeatureSelector(
-					numFeatures,
-					dataset,
+			new GeneSpecificFeatureSelector(dataset,
 					permutedClassZeroIndices,
-					permutedClassOneIndices,
-					side == TWO_SIDED);
+					permutedClassOneIndices, permutedScores); // compute scores using permuted class labels
 
-			for(int feature = 0; feature < numFeatures; feature++) {
-				rankBasedScores[feature][perm] = rankFeatureSelector.Sx[feature];
+			for(int i = 0; i < numFeatures; i++) {
+				geneSpecificScores[i][perm] = permutedScores[topFeatureSelector.sortedIndices[i]];
 			}
 
-			new GeneSpecificFeatureSelector(topFeaturesDataset,
-					permutedClassZeroIndices,
-					permutedClassOneIndices,
-					geneSpecificScores, perm);
-		}
+			if(side == TWO_SIDED) {
+				for(int i = 0; i < permutedScores.length; i++) {
+					permutedScores[i] = Math.abs(permutedScores[i]);
+				}
 
+			}
+			Arrays.sort(permutedScores); // ascending sort
+			if(side != CLASS_ZERO_LESS_THAN_CLASS_ONE) {
+				for(int feature = 0; feature < numFeatures; feature++) {
+					rankBasedScores[feature][perm] = permutedScores[permutedScores.length - 1 - feature];
+				}
+			} else {
+				for(int feature = 0; feature < numFeatures; feature++) {
+					rankBasedScores[feature][perm] = permutedScores[feature];
+				}
+			}
+			for(int i = 0; i < numFeatures; i++) {
+				if(containsAtLeastOneGreater(scores[i], permutedScores)) {
+					fwer[i] = fwer[i] + 1.0;
+				}
+			}
+
+		}
+		for(int i = 0; i < numFeatures; i++) {
+			fwer[i] /= numPermutations;
+		}
 		double[] rankBasedPValues = null;
 		double[] geneSpecificPValues = null;
 
 		if(side != TWO_SIDED) {
-			rankBasedPValues = computeTwoSidedPValues(
-					datasetFeatureSelector.Sx,
+			rankBasedPValues = computeOneSidedPValues(
+					scores,
 					rankBasedScores);
+
 			geneSpecificPValues = computeOneSidedPValues(
-					datasetFeatureSelector.Sx,
+					scores,
 					geneSpecificScores);
 		} else {
 			rankBasedPValues = computeTwoSidedPValues(
-					datasetFeatureSelector.Sx,
+					scores,
 					rankBasedScores);
 			geneSpecificPValues = computeTwoSidedPValues(
-					datasetFeatureSelector.Sx,
+					scores,
 					geneSpecificScores);
-		}
-
-		double[] fwer = new double[numFeatures];
-
-		for(int feature = 0; feature < numFeatures; feature++) {
-
-			int fwerCount = 0;
-			double actualScore = Math.abs(datasetFeatureSelector.Sx[feature]);
-
-			for(int i = 0; i < numFeatures; i++) {
-
-				boolean iterationGreaterThanS = false;
-
-				for(int j = numPermutations - 1; j >= 0; j--) {
-
-					if(Math.abs(geneSpecificScores[i][j]) > actualScore) {
-						iterationGreaterThanS = true;
-
-						break;
-					}
-				}
-
-				if(iterationGreaterThanS) {
-					fwerCount++;
-				}
-			}
-
-			fwer[feature] = (double) (fwerCount) / numPermutations;
 		}
 
 		PrintWriter pw = null;
@@ -337,8 +342,8 @@ public class MarkerSelection {
 			pw = new PrintWriter(new FileWriter(outputFileName));
 
 			for(int feature = 0; feature < numFeatures; feature++) {
-				features.add(topFeaturesDataset.getRowName(feature));
-				pw.println(topFeaturesDataset.getRowName(feature) + "\t" +
+				features.add(dataset.getRowName(topFeatureSelector.sortedIndices[feature]));
+				pw.println(features.get(feature) + "\t" +
 						rankBasedPValues[feature] + "\t" +
 						geneSpecificPValues[feature] + "\t " +
 						fwer[feature]);
@@ -396,9 +401,14 @@ public class MarkerSelection {
 		for(int i = 0; i < numFeatures; i++) {
 
 			for(int j = 0; j < numPermutations; j++) {
-
-				if(permutedScores[i][j] >= actualScores[i]) {
-					oneSidedPValues[i] = oneSidedPValues[i] + 1;
+				if(side == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
+					if(permutedScores[i][j] >= actualScores[i]) {
+						oneSidedPValues[i] = oneSidedPValues[i] + 1;
+					}
+				} else {
+					if(permutedScores[i][j] <= actualScores[i]) {
+						oneSidedPValues[i] = oneSidedPValues[i] + 1;
+					}
 				}
 			}
 
@@ -441,9 +451,10 @@ public class MarkerSelection {
 	}
 
 
+
 	/**
-	 * @author     Joshua Gould
-	 * @created    September 17, 2004
+	 *@author     Joshua Gould
+	 *@created    September 17, 2004
 	 */
 	static class RankFeatureSelector {
 
@@ -452,16 +463,12 @@ public class MarkerSelection {
 
 
 		public RankFeatureSelector(int numFeatures, Dataset dataset,
-				int[] classOneIndices, int[] class2Indices) {
-			this(numFeatures, dataset, classOneIndices, class2Indices, false);
-		}
-
-
-		public RankFeatureSelector(int numFeatures, Dataset dataset,
 				int[] classOneIndices, int[] class2Indices,
-				boolean absolute) {
+				int side) {
+
 			sortedIndices = new int[numFeatures];
 			Sx = new double[numFeatures];
+
 			Arrays.fill(Sx, -Double.MAX_VALUE);
 
 			for(int i = 0, rows = dataset.getRowDimension(); i < rows; i++) {
@@ -475,55 +482,78 @@ public class MarkerSelection {
 				double Sxi = (class1Mean - class2Mean) / (class1Std +
 						class2Std);
 
-				if(absolute) {
+				if(side == TWO_SIDED) {
 					Sxi = Math.abs(Sxi);
 				}
 
 				int insertionIndex = -1;
-
-				for(int j = 0; j < numFeatures; j++) {
-
-					if(Sxi > Sx[j]) {
-						insertionIndex = j;
-
-						break;
-					}
+				if(side == CLASS_ZERO_GREATER_THAN_CLASS_ONE || side == TWO_SIDED) {
+					insertionIndex = binarySearch(Sx, Sxi);
+				} else {
+					insertionIndex = Arrays.binarySearch(Sx, Sxi);
 				}
 
-				if(insertionIndex != -1) {
+				if(insertionIndex < 0) { // score doesn't already exists in Sx
+					insertionIndex = -insertionIndex - 1;
+				}
 
+				if(insertionIndex < numFeatures) {
 					// shift everything to the right
 					System.arraycopy(Sx, insertionIndex, Sx,
 							insertionIndex + 1,
 							numFeatures - insertionIndex - 1);
 					Sx[insertionIndex] = Sxi;
+
 					System.arraycopy(sortedIndices, insertionIndex,
 							sortedIndices, insertionIndex + 1,
 							numFeatures - insertionIndex - 1);
 					sortedIndices[insertionIndex] = i;
+
 				}
 			}
+		}
+
+
+		/**
+		 *  a is in descending order
+		 *
+		 *@param  a    Description of the Parameter
+		 *@param  key  Description of the Parameter
+		 *@return      Description of the Return Value
+		 */
+		public static int binarySearch(double[] a, double key) {
+			int low = a.length - 1;
+			int high = 0;
+
+			while(high <= low) {
+				int mid = (low + high) >> 1;
+				double midVal = a[mid];
+
+				if(midVal < key) {
+					low = mid - 1;
+				} else if(midVal > key) {
+					high = mid + 1;
+				} else {
+					return mid;
+				} // key found
+			}
+			return -(high + 1); // key not found.
 		}
 	}
 
 
 	/**
-	 * @author     Joshua Gould
-	 * @created    September 17, 2004
+	 *@author     Joshua Gould
+	 *@created    September 17, 2004
 	 */
 	static class GeneSpecificFeatureSelector {
-
-		double[] Sx;
-
 
 		public GeneSpecificFeatureSelector(Dataset dataset,
 				int[] classOneIndices,
 				int[] class2Indices,
-				double[][] scores,
-				int permutationIndex) {
+				double[] scores) {
 
 			int rows = dataset.getRowDimension();
-			Sx = new double[rows];
 
 			for(int i = 0; i < rows; i++) {
 
@@ -535,7 +565,7 @@ public class MarkerSelection {
 						class2Mean);
 				double Sxi = (class1Mean - class2Mean) / (class1Std +
 						class2Std);
-				scores[i][permutationIndex] = Sxi;
+				scores[i] = Sxi;
 			}
 		}
 	}

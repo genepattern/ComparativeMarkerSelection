@@ -359,17 +359,20 @@ public class MarkerSelection {
 			}
 		}
 
+      
 		for(int i = 0; i < N; i++) {
 			int rank = ranks[i];
 			double p = featureSpecificPValues[i];
 			fdr[i] = (p * N) / rank;
 		}
       
-      // ensure fdr is monotonically decreasing
-      fdr[N-1] = Math.min(fdr[N-1], 1); 
+      // FIXME ensure fdr is monotonically decreasing
+   /*   int[] fdrIndices = Util.index(fdr, Util.ASCENDING);
+      fdr[fdrIndices[N-1]] = Math.min(fdrIndices[N-1], 1); 
       for(int i = N-2; i >= 0; i--) {
-			fdr[i] = Math.min(fdr[i], fdr[i+1]);
+			fdr[fdrIndices[i]] = Math.min(fdr[fdrIndices[i]], fdr[fdrIndices[i+1]]);
 		}
+     */ 
 
 		int[] _ranks = null;
 

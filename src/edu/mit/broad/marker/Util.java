@@ -12,6 +12,7 @@ public class Util {
 	public static int DESCENDING = 1;
 	public static int ABSOLUTE = 2;
 
+	private static final double kMinVariancePercent = .20;
 
 	public static void print(double[] a) {
 		for(int i = 0; i < a.length; i++) {
@@ -163,6 +164,73 @@ public class Util {
 		java.util.Arrays.sort(data);
 		int half = indices.length / 2;
 		return data[half];
+	}
+
+
+	public static void ttest(Dataset dataset,
+			int[] classOneIndices,
+			int[] class2Indices,
+			double[] scores, boolean fixStdDev) {
+
+		int rows = dataset.getRowDimension();
+
+		for(int i = 0; i < rows; i++) {
+
+			double class1Mean = Util.mean(dataset, classOneIndices, i);
+			double class2Mean = Util.mean(dataset, class2Indices, i);
+			double class1Std = Util.standardDeviation(dataset, classOneIndices,
+					i, class1Mean);
+			double class2Std = Util.standardDeviation(dataset, class2Indices, i,
+					class2Mean);
+					if(fixStdDev) {
+						class1Std = fixStdDev(class1Std, class1Mean);
+						class2Std = fixStdDev(class2Std, class2Mean);
+					}
+			double denom = Math.sqrt((class1Std * class1Std) + (class2Std * class2Std));
+			double Sxi = (class1Mean - class2Mean) / denom;
+			scores[i] = Sxi;
+		}
+	}
+
+
+	public static double fixStdDev(double s, double m) {
+		double absMean = Math.abs(m);
+		double minS = kMinVariancePercent * absMean;
+		if(minS < s) {
+			minS = s;
+		}
+
+		if(minS == 0) {
+			minS = .1;
+		}
+		return minS;
+	}
+
+
+	public static void snr(Dataset dataset,
+			int[] classOneIndices,
+			int[] class2Indices,
+			double[] scores, boolean fixStdDev) {
+
+		int rows = dataset.getRowDimension();
+
+		for(int i = 0; i < rows; i++) {
+
+			double class1Mean = Util.mean(dataset, classOneIndices, i);
+			double class2Mean = Util.mean(dataset, class2Indices, i);
+			double class1Std = Util.standardDeviation(dataset, classOneIndices,
+					i, class1Mean);
+			double class2Std = Util.standardDeviation(dataset, class2Indices, i,
+					class2Mean);
+			if(fixStdDev) {
+						class1Std = fixStdDev(class1Std, class1Mean);
+						class2Std = fixStdDev(class2Std, class2Mean);
+					}
+					
+			double Sxi = (class1Mean - class2Mean) / (class1Std +
+					class2Std);
+			scores[i] = Sxi;
+		}
 	}
 
 

@@ -24,8 +24,7 @@ public class MarkerSelection {
 
 	/**  input classes */
 	ClassVector classVector;
-	/**  number of features to select */
-	int numFeatures;
+
 	/**  number of permutations to perform */
 	int numPermutations;
 	final static int CLASS_ZERO_GREATER_THAN_CLASS_ONE = 0;
@@ -61,29 +60,39 @@ public class MarkerSelection {
 	/**  number of rows in input data */
 	int N;
 
+	/**  Whether to fix the standard deviation, as is done in GeneCluster */
+	boolean fixStdev;
+	StatisticalMeasure statisticalMeasure;
+
 
 	public MarkerSelection(Dataset _dataset, ClassVector _classVector,
-			int _numFeatures, int _numPermutations, int _side,
+			int _numPermutations, int _side,
 			String _outputFileName, boolean _balanced,
-			boolean complete, String permutationsFile) {
+			boolean complete, boolean fixStdev, int metric, String permutationsFile) {
 		this.dataset = _dataset;
 		this.classVector = _classVector;
 
 		GPUtil.checkDimensions(dataset, classVector);
 
-		this.numFeatures = _numFeatures;
 		this.numPermutations = _numPermutations;
 		this.side = _side;
 		this.balanced = _balanced;
 		this.outputFileName = _outputFileName;
 		this.complete = complete;
 		this.N = dataset.getRowDimension();
-
+		this.fixStdev = fixStdev;
+		this.metric = metric;
 		if(permutationsFile != null) {
 			readPermutations = true;
 			initFile(permutationsFile);
 		}
-
+		if(metric == T_TEST) {
+			statisticalMeasure = new TTest();
+		} else if(metric == SNR) {
+			statisticalMeasure = new SNR();
+		} else {
+			GPUtil.exit("Unknown test statistic");
+		}
 		computePValues();
 
 		if(readPermutations) {
@@ -104,22 +113,23 @@ public class MarkerSelection {
 
 		String datasetFile = args[0];
 		String clsFile = args[1];
-		int _numFeatures = Integer.parseInt(args[2]);
-		int _numPermutations = Integer.parseInt(args[3]);
-		int side = Integer.parseInt(args[4]);
-		String outputFileName = args[5];
-		boolean balanced = Boolean.valueOf(args[6]).booleanValue();
-		boolean complete = Boolean.valueOf(args[7]).booleanValue();
+		int _numPermutations = Integer.parseInt(args[2]);
+		int side = Integer.parseInt(args[3]);
+		String outputFileName = args[4];
+		boolean balanced = Boolean.valueOf(args[5]).booleanValue();
+		boolean complete = Boolean.valueOf(args[6]).booleanValue();
+		boolean fixStdev = Boolean.valueOf(args[7]).booleanValue();
+		int metric = Integer.parseInt(args[8]);
 		String permutationsFile = null;
-		if(args.length == 9) {
-			permutationsFile = args[8];
+		if(args.length == 10) {
+			permutationsFile = args[9];
 		}
 		ExpressionDataReader reader = GPUtil.getExpressionReader(datasetFile);
 		ExpressionDataImpl e = (ExpressionDataImpl) reader.read(datasetFile);
 		new MarkerSelection(e.getExpressionMatrix(),
-				GPUtil.getClassVector(clsFile), _numFeatures,
+				GPUtil.getClassVector(clsFile),
 				_numPermutations, side, outputFileName, balanced,
-				complete, permutationsFile);
+				complete, fixStdev, metric, permutationsFile);
 	}
 
 
@@ -162,13 +172,11 @@ public class MarkerSelection {
 			}
 		}
 
-		GeneSpecificFeatureSelector geneSpecificFeatureSelector = new GeneSpecificFeatureSelector();
-
 		unpermutedScores = new double[N];
 
-		geneSpecificFeatureSelector.compute(dataset,
+		statisticalMeasure.compute(dataset,
 				classZeroIndices,
-				classOneIndices, unpermutedScores);
+				classOneIndices, unpermutedScores, fixStdev);
 
 		int sortOrder = -1;
 		if(side == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
@@ -202,7 +210,7 @@ public class MarkerSelection {
 			}
 		}
 
-		double[] rankBasedPValues = new double[numFeatures];
+		double[] rankBasedPValues = new double[N];
 		double[] all_features_fwer = new double[N];
 		double[] fpr = new double[N];
 		double[] geneSpecificPValues = new double[N];
@@ -231,9 +239,9 @@ public class MarkerSelection {
 
 			}
 
-			geneSpecificFeatureSelector.compute(dataset,
+			statisticalMeasure.compute(dataset,
 					permutedClassZeroIndices,
-					permutedClassOneIndices, permutedScores); // compute scores using permuted class labels
+					permutedClassOneIndices, permutedScores, fixStdev); // compute scores using permuted class labels
 
 			for(int i = 0; i < N; i++) {
 				double score = unpermutedScores[i];
@@ -270,7 +278,7 @@ public class MarkerSelection {
 			}
 			Util.sort(permutedScores, permutedScoresSortOrder);
 
-			for(int i = 0; i < numFeatures; i++) {
+			for(int i = 0; i < N; i++) {
 				double score = unpermutedScores[topFeaturesIndices[i]];
 				if(side == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
 					if(permutedScores[i] >= score) {
@@ -288,21 +296,18 @@ public class MarkerSelection {
 			}
 		}
 
-		double[] fwer = new double[numFeatures];
-
-		for(int i = 0; i < numFeatures; i++) {
-			fwer[i] = all_features_fwer[topFeaturesIndices[i]];
-			fwer[i] /= numPermutations;
-			rankBasedPValues[i] /= numPermutations;
-		}
+		double[] fwer = new double[N];
 
 		for(int i = 0; i < N; i++) {
 			fpr[i] /= N;
 			fpr[i] /= numPermutations;
 			geneSpecificPValues[i] /= numPermutations;
+			fwer[i] = all_features_fwer[topFeaturesIndices[i]];
+			fwer[i] /= numPermutations;
+			rankBasedPValues[i] /= numPermutations;
 		}
 
-		double[] fdr = new double[numFeatures];
+		double[] fdr = new double[N];
 		int[] pValueIndices = Util.getIndices(fpr, Util.ASCENDING);
 		int[] ranks = Util.rank(pValueIndices);
 
@@ -315,7 +320,7 @@ public class MarkerSelection {
 			}
 		}
 
-		for(int i = 0; i < numFeatures; i++) {
+		for(int i = 0; i < N; i++) {
 			int index = topFeaturesIndices[i];
 			int rank = ranks[index];
 			double p = fpr[index];
@@ -327,66 +332,25 @@ public class MarkerSelection {
 		try {
 			pw = new PrintWriter(new FileWriter(outputFileName));
 
-			for(int feature = 0; feature < numFeatures; feature++) {
-				int index = topFeaturesIndices[feature];
-
-				pw.println(dataset.getRowName(index) + "\t" +
-						rankBasedPValues[feature] + "\t" +
-						geneSpecificPValues[index] + "\t " +
-						fwer[feature] + "\t" + fpr[index] + "\t" + fdr[feature]);
-			}
-		} catch(Exception e) {
-			GPUtil.exit("An error occurred while saving the output file.", e);
-		} finally {
-
-			if(pw != null) {
-
-				try {
-					pw.close();
-				} catch(Exception x) {
-				}
-			}
-		}
-		// output p values
-		try {
-			pw = new PrintWriter(new FileWriter("p.values.txt"));
 			for(int i = 0; i < N; i++) {
-				if(i > 0) {
-					pw.print(" ");
-				}
-				pw.print(fpr[i]);
+				int sortedIndex = topFeaturesIndices[i];
+
+				pw.println(dataset.getRowName(sortedIndex) + "\t" +
+						unpermutedScores[sortedIndex] + "\t" + geneSpecificPValues[i] + "\t " + fpr[sortedIndex] + "\t" + fwer[i] + "\t" + rankBasedPValues[i] + "\t" + fdr[i]);
 			}
-			pw.println();
 		} catch(Exception e) {
 			GPUtil.exit("An error occurred while saving the output file.", e);
 		} finally {
+
 			if(pw != null) {
+
 				try {
 					pw.close();
 				} catch(Exception x) {
 				}
 			}
 		}
-		
-		try {
-			pw = new PrintWriter(new FileWriter("indices.txt"));
-			for(int i = 0; i < numFeatures; i++) {
-				if(i > 0) {
-					pw.print(" ");
-				}
-				pw.print(topFeaturesIndices[i]);
-			}
-			pw.println();
-		} catch(Exception e) {
-			GPUtil.exit("An error occurred while saving the output file.", e);
-		} finally {
-			if(pw != null) {
-				try {
-					pw.close();
-				} catch(Exception x) {
-				}
-			}
-		}
+
 	}
 
 
@@ -437,28 +401,41 @@ public class MarkerSelection {
 	/**
 	 *@author    Joshua Gould
 	 */
-	static class GeneSpecificFeatureSelector {
-
+	static class TTest implements StatisticalMeasure {
 		public void compute(Dataset dataset,
-				int[] classOneIndices,
-				int[] class2Indices,
-				double[] scores) {
+				int[] classZeroIndices,
+				int[] classOneIndices, double[] unpermutedScores, boolean fixStdev) {
+			Util.ttest(dataset,
+					classZeroIndices,
+					classOneIndices, unpermutedScores, fixStdev);
 
-			int rows = dataset.getRowDimension();
-
-			for(int i = 0; i < rows; i++) {
-
-				double class1Mean = Util.mean(dataset, classOneIndices, i);
-				double class2Mean = Util.mean(dataset, class2Indices, i);
-				double class1Std = Util.standardDeviation(dataset, classOneIndices,
-						i, class1Mean);
-				double class2Std = Util.standardDeviation(dataset, class2Indices, i,
-						class2Mean);
-				double Sxi = (class1Mean - class2Mean) / (class1Std +
-						class2Std);
-				scores[i] = Sxi;
-			}
 		}
 	}
+
+
+	/**
+	 *@author    Joshua Gould
+	 */
+	static class SNR implements StatisticalMeasure {
+		public void compute(Dataset dataset,
+				int[] classZeroIndices,
+				int[] classOneIndices, double[] unpermutedScores, boolean fixStdev) {
+			Util.snr(dataset,
+					classZeroIndices,
+					classOneIndices, unpermutedScores, fixStdev);
+
+		}
+	}
+
+
+	/**
+	 *@author    Joshua Gould
+	 */
+	static interface StatisticalMeasure {
+		public void compute(Dataset dataset,
+				int[] classZeroIndices,
+				int[] classOneIndices, double[] unpermutedScores, boolean fixStdev);
+	}
+
 }
 

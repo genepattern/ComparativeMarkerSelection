@@ -23,15 +23,18 @@ public class MarkerSelectionFrame extends JFrame {
 	double[] geneSpecificPValues;
 	double[] rankBasedPValues;
 	double[] fwer;
-	final static Class[] COLUMN_CLASSES = {String.class, Double.class, Double.class, Double.class};
-	final static String[] COLUMN_NAMES = {"Feature", "Feature Specific P Value", "Rank Based P Value", "FWER"};
+	double[] fdr;
+	int N;
+	final static Class[] COLUMN_CLASSES = {String.class, Double.class, Double.class, Double.class, Double.class};
+	final static String[] COLUMN_NAMES = {"Feature", "Feature Specific P Value", "Rank Based P Value", "FWER", "FDR (BH)"};
 
 
-	public MarkerSelectionFrame(Vector features, double[] geneSpecificPValues, double[] rankBasedPValues, double[] fwer) {
+	public MarkerSelectionFrame(Vector features, double[] geneSpecificPValues, double[] rankBasedPValues, double[] fwer, double[] fdr) {
 		this.features = features;
 		this.geneSpecificPValues = geneSpecificPValues;
 		this.rankBasedPValues = rankBasedPValues;
 		this.fwer = fwer;
+		this.fdr = fdr;
 
 		plot = new MarkerSelectionPlot();
 		plot.setMarksStyle("points", 0);
@@ -39,9 +42,9 @@ public class MarkerSelectionFrame extends JFrame {
 		plot.setXLabel("Feature Specific P Value");
 		plot.setYLabel("Rank Based P Value");
 		plot.addLegend(0, "P Values");
-
+		N = features.size();
 		double max = 0;
-		for(int i = 0, length = geneSpecificPValues.length; i < length; i++) {
+		for(int i = 0; i < N; i++) {
 			plot.addPoint(0, geneSpecificPValues[i], rankBasedPValues[i], false);
 			max = Math.max(max, geneSpecificPValues[i]);
 			max = Math.max(max, rankBasedPValues[i]);
@@ -134,7 +137,7 @@ public class MarkerSelectionFrame extends JFrame {
 
 
 		public int getRowCount() {
-			return geneSpecificPValues.length;
+			return N;
 		}
 
 
@@ -165,8 +168,10 @@ public class MarkerSelectionFrame extends JFrame {
 				return new Double(geneSpecificPValues[rowIndex]);
 			} else if(columnIndex == 2) {
 				return new Double(rankBasedPValues[rowIndex]);
-			} else {
+			} else if(columnIndex == 3) {
 				return new Double(fwer[rowIndex]);
+			} else {
+				return new Double(fdr[rowIndex]);	
 			}
 		}
 

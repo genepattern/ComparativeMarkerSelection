@@ -24,18 +24,19 @@ public class MarkerSelectionFrame extends JFrame {
 	double[] rankBasedPValues;
 	double[] fwer;
 	double[] fdr;
+	double[] fpr;
 	int N;
-	final static Class[] COLUMN_CLASSES = {String.class, Double.class, Double.class, Double.class, Double.class};
-	final static String[] COLUMN_NAMES = {"Feature", "Feature Specific P Value", "Rank Based P Value", "FWER", "FDR (BH)"};
+	final static Class[] COLUMN_CLASSES = {String.class, Double.class, Double.class, Double.class, Double.class, Double.class};
+	final static String[] COLUMN_NAMES = {"Feature", "Feature Specific P Value", "Rank Based P Value", "FWER", "FPR", "FDR (BH)"};
 
 
-	public MarkerSelectionFrame(Vector features, double[] geneSpecificPValues, double[] rankBasedPValues, double[] fwer, double[] fdr) {
+	public MarkerSelectionFrame(Vector features, double[] geneSpecificPValues, double[] rankBasedPValues, double[] fwer, double[] fdr, double[] fpr) {
 		this.features = features;
 		this.geneSpecificPValues = geneSpecificPValues;
 		this.rankBasedPValues = rankBasedPValues;
 		this.fwer = fwer;
 		this.fdr = fdr;
-
+		this.fpr = fpr;
 		plot = new MarkerSelectionPlot();
 		plot.setMarksStyle("points", 0);
 		plot.setTitle("Markers");
@@ -170,6 +171,8 @@ public class MarkerSelectionFrame extends JFrame {
 				return new Double(rankBasedPValues[rowIndex]);
 			} else if(columnIndex == 3) {
 				return new Double(fwer[rowIndex]);
+			} else if(columnIndex==4) {
+				return new Double(fpr[rowIndex]);
 			} else {
 				return new Double(fdr[rowIndex]);	
 			}

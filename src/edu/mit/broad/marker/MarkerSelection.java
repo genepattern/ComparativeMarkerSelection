@@ -47,7 +47,6 @@ public class MarkerSelection {
 	/**  whether to read permutations from a file */
 	boolean readPermutations = false;
 	BufferedReader testClassPermutationsReader;
-	int[][] testAssignments;
 	String outputFileName;
 
 	double[][] rankBasedScores;
@@ -72,7 +71,7 @@ public class MarkerSelection {
 
 		if(permutationsFile != null) {
 			readPermutations = true;
-			readPermutations(permutationsFile);
+			initFile(permutationsFile);
 		}
 
 		computePValues();
@@ -194,18 +193,6 @@ public class MarkerSelection {
 				complete, permutationsFile);
 	}
 
-
-	int[] invert(ClassVector cv) {
-		int[] assignments = new int[cv.size()];
-		int[] classZeroIndices = cv.getIndices(0);
-
-		for(int i = 0, length = classZeroIndices.length; i < length; i++) {
-			assignments[classZeroIndices[i]] = 1;
-		}
-		return assignments;
-	}
-
-
 	void computePValues() {
 		int[] classZeroIndices = classVector.getIndices(0);
 		int[] classOneIndices = classVector.getIndices(1);
@@ -268,7 +255,7 @@ public class MarkerSelection {
 			int[] permutedClassOneIndices = null;
 
 			if(readPermutations) {
-				permutedAssignments = testAssignments[perm];
+				permutedAssignments = nextPermutation();
 
 				ClassVector temp = new ClassVector(permutedAssignments,
 						levels);
@@ -369,26 +356,30 @@ public class MarkerSelection {
 	}
 
 
-	void readPermutations(String fileName) {
+	int[] nextPermutation() {
+		try {
+			String s = testClassPermutationsReader.readLine();
+			StringTokenizer st = new StringTokenizer(s, " \t");
+			int cols = dataset.getColumnDimension();
+			int[] a = new int[cols];
+	
+			for(int j = 0; j < cols; j++) {
+				a[j] = Integer.parseInt(st.nextToken());
+			}
+	
+			return a;	
+		} catch(Exception e) {
+			GPUtil.exit("An error occurred while reading the permutations file.", e);
+			return null;
+		}
+		
+	}
+	
+	void initFile(String fileName) {
 
 		try {
 			testClassPermutationsReader = new BufferedReader(new FileReader(
 					fileName));
-			testAssignments = new int[numPermutations][];
-
-			for(int i = 0; i < numPermutations; i++) {
-
-				String s = testClassPermutationsReader.readLine();
-				StringTokenizer st = new StringTokenizer(s, "\t");
-				int cols = dataset.getColumnDimension();
-				int[] a = new int[cols];
-
-				for(int j = 0; j < cols; j++) {
-					a[j] = Integer.parseInt(st.nextToken());
-				}
-
-				testAssignments[i] = a;
-			}
 		} catch(Exception e) {
 			GPUtil.exit(
 					"An error occurred while reading the permutations file.",

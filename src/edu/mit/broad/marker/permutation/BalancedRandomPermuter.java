@@ -38,16 +38,5 @@ public class BalancedRandomPermuter implements Permuter {
 		return newAssignments;
 	}
 
-
-	public static void main(String[] args) {
-		int[] classZeroIndices = {0, 1, 2, 3};
-		int[] classOneIndices = {4, 5, 6, 7};
-		BalancedRandomPermuter p = new BalancedRandomPermuter(classZeroIndices, classOneIndices);
-		for(int i = 0; i < 10; i++) {
-			edu.mit.broad.marker.Util.print(p.next());
-		}
-
-	}
-
 }
 

@@ -10,6 +10,7 @@ import edu.mit.broad.data.matrix.*;
 import edu.mit.broad.data.expr.*;
 import edu.mit.broad.module.AnalysisUtil;
 import edu.mit.broad.io.expr.*;
+import edu.mit.broad.stats.*;
 
 import edu.mit.broad.marker.permutation.*;
 
@@ -63,7 +64,7 @@ public class MarkerSelection {
 
 	/**  Whether to fix the standard deviation, as is done in GeneCluster */
 	boolean fixStdev;
-	StatisticalMeasure statisticalMeasure;
+	ITestStatistic statisticalMeasure;
 
 	/** Input dataset file name */
 	String datasetFile;
@@ -123,18 +124,18 @@ public class MarkerSelection {
 		//	initFile(permutationsFile);
 		//}
 		if(metric == T_TEST) {
-         statisticalMeasure = new TTest();
+         statisticalMeasure = new TestStatistics.TTest(fixStdev);
       } else if(metric== T_TEST_MEDIAN) {
-         statisticalMeasure = new TTestMedian();
+         statisticalMeasure = new TestStatistics.TTestMedian(fixStdev);
       } else if(metric == SNR) {
-         statisticalMeasure = new SNR();
+         statisticalMeasure = new TestStatistics.SNR(fixStdev);
 		} else if(metric == SNR_MEDIAN) {
-         statisticalMeasure = new SNRMedian();
+         statisticalMeasure = new TestStatistics.SNRMedian(fixStdev);
       } else if(metric==T_TEST_MIN_STD) {
          if(minStd <= 0) {
             AnalysisUtil.exit("Minimum standard deviation must be greater than zero.");
          }
-         statisticalMeasure = new TTestMinStd(minStd);
+         statisticalMeasure = new TestStatistics.TTestMinStd(minStd, fixStdev);
       }else {
 			AnalysisUtil.exit("Unknown test statistic");
 		}
@@ -166,7 +167,7 @@ public class MarkerSelection {
 		String outputFileName = args[4];
 		boolean balanced = Boolean.valueOf(args[5]).booleanValue();
 		boolean complete = Boolean.valueOf(args[6]).booleanValue();
-		boolean fixStdev = Boolean.valueOf(args[7]).booleanValue();
+		boolean fixStdevev = Boolean.valueOf(args[7]).booleanValue();
 		int metric = Integer.parseInt(args[8]);
       double minStd = -1;
       if(args.length==10) {
@@ -176,7 +177,7 @@ public class MarkerSelection {
 		new MarkerSelection(datasetFile,
 				clsFile,
 				_numPermutations, testDirection, outputFileName, balanced,
-				complete, fixStdev, metric, minStd);
+				complete, fixStdevev, metric, minStd);
 	}
 
 
@@ -201,7 +202,7 @@ public class MarkerSelection {
 
 		statisticalMeasure.compute(dataset,
 				classZeroIndices,
-				classOneIndices, scores, fixStdev);
+				classOneIndices, scores);
 
 		Permuter permuter = null;
       if(covariate!=null) {
@@ -229,17 +230,17 @@ public class MarkerSelection {
 			}
 		} 
 
-		int[] descendingIndices = Util.getIndices(scores, Util.DESCENDING);
+		int[] descendingIndices = Util.index(scores, Util.DESCENDING);
 		double[] absoluteScores = (double[]) scores.clone();
 		for(int i = 0; i < N; i++) {
 			absoluteScores[i] = Math.abs(absoluteScores[i]);
 		}
-		int[] descendingAbsIndices = Util.getIndices(absoluteScores, Util.DESCENDING);
+		int[] descendingAbsIndices = Util.index(absoluteScores, Util.DESCENDING);
 
 		double[] rankBasedPValues = new double[N];
 		double[] fwer = new double[N];
 		double[] fpr = new double[N];
-		double[] geneSpecificPValues = new double[N];
+		double[] featureSpecificPValues = new double[N];
 		double[] permutedScores = new double[N];
 		
 		for(int perm = 0; perm < numPermutations; perm++) {
@@ -271,17 +272,17 @@ public class MarkerSelection {
 		
 			statisticalMeasure.compute(dataset,
 					permutedClassZeroIndices,
-					permutedClassOneIndices, permutedScores, fixStdev); // compute scores using permuted class labels
+					permutedClassOneIndices, permutedScores); // compute scores using permuted class labels
 
 			for(int i = 0; i < N; i++) {
 				double score = scores[i];
 				if(testDirection == TWO_SIDED || testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
 					if(permutedScores[i] >= score) {
-						geneSpecificPValues[i] += 1.0;
+						featureSpecificPValues[i] += 1.0;
 					}
 				} else {
 					if(permutedScores[i] <= score) {
-						geneSpecificPValues[i] += 1.0;
+						featureSpecificPValues[i] += 1.0;
 					}
 				}
 
@@ -337,22 +338,22 @@ public class MarkerSelection {
 		for(int i = 0; i < N; i++) {
 			fpr[i] /= N;
 			fpr[i] /= numPermutations;
-			geneSpecificPValues[i] /= numPermutations;
+			featureSpecificPValues[i] /= numPermutations;
 			if(testDirection == TWO_SIDED) {
-				geneSpecificPValues[i] = 2.0 * Math.min(geneSpecificPValues[i], 1.0 - geneSpecificPValues[i]);
+				featureSpecificPValues[i] = 2.0 * Math.min(featureSpecificPValues[i], 1.0 - featureSpecificPValues[i]);
 			}
 			fwer[i] /= numPermutations;
 			rankBasedPValues[i] /= numPermutations;
 		}
 
 		double[] fdr = new double[N];
-		int[] pValueIndices = Util.getIndices(geneSpecificPValues, Util.ASCENDING);
+		int[] pValueIndices = Util.index(featureSpecificPValues, Util.ASCENDING);
 		int[] ranks = Util.rank(pValueIndices);
 
 		// check for ties
 		for(int i = pValueIndices.length - 1; i > 0; i--) {
-			double bigPValue = geneSpecificPValues[pValueIndices[i]];
-			double smallPValue = geneSpecificPValues[pValueIndices[i - 1]];
+			double bigPValue = featureSpecificPValues[pValueIndices[i]];
+			double smallPValue = featureSpecificPValues[pValueIndices[i - 1]];
 			if(bigPValue == smallPValue) {
 				ranks[pValueIndices[i - 1]] = ranks[pValueIndices[i]];
 			}
@@ -360,7 +361,7 @@ public class MarkerSelection {
 
 		for(int i = 0; i < N; i++) {
 			int rank = ranks[i];
-			double p = geneSpecificPValues[i];
+			double p = featureSpecificPValues[i];
 			fdr[i] = (p * N) / rank;
 		}
       
@@ -385,7 +386,7 @@ public class MarkerSelection {
       try {
          tempFileWriter = new PrintWriter(new FileWriter(tempFileName));
          for(int i = 0; i < N; i++) {
-            tempFileWriter.println(geneSpecificPValues[descendingIndices[i]]);
+            tempFileWriter.println(featureSpecificPValues[descendingIndices[i]]);
          }
       } catch(IOException ioe) {
          AnalysisUtil.exit("An error occurred while saving the output file.", ioe);
@@ -402,7 +403,7 @@ public class MarkerSelection {
       BufferedReader br = null;
       String qvalueOutputFileName = "qvalues.txt";
       new File(qvalueOutputFileName).deleteOnExit();
-      try {
+      try { // read in results from qvalue
          br = new BufferedReader(new FileReader(qvalueOutputFileName));
          for(int i = 0; i < qvalueHeaderLines; i++) {
             qvalueHeaders[i] = br.readLine();  
@@ -420,10 +421,7 @@ public class MarkerSelection {
             }
          }
       }
-      
-      
-      // read in results from qvalue
-      
+
 		PrintWriter pw = null;
 
 		try {
@@ -474,9 +472,9 @@ public class MarkerSelection {
 				if(testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
 					rank = N - rank + 1;
 				}
-				double bonferroni = Math.min(geneSpecificPValues[index] * N, 1.0);
+				double bonferroni = Math.min(featureSpecificPValues[index] * N, 1.0);
 				pw.println(rank + "\t" + dataset.getRowName(index) + "\t" +
-						scores[index] + "\t" + geneSpecificPValues[index] + "\t " + fpr[index] + "\t" + fwer[index] + "\t" + rankBasedPValues[i] + "\t" + fdr[index] + "\t" + bonferroni + "\t" + qvalues[i]);
+						scores[index] + "\t" + featureSpecificPValues[index] + "\t " + fpr[index] + "\t" + fwer[index] + "\t" + rankBasedPValues[i] + "\t" + fdr[index] + "\t" + bonferroni + "\t" + qvalues[i]);
 			}
 			
 		} catch(Exception e) {
@@ -541,74 +539,7 @@ public class MarkerSelection {
 		}
 	}
 
-	static class TTest implements StatisticalMeasure {
-		public void compute(DoubleMatrix2D dataset,
-				int[] classZeroIndices,
-				int[] classOneIndices, double[] scores, boolean fixStdev) {
-			Util.ttest(dataset,
-					classZeroIndices,
-					classOneIndices, scores, fixStdev);
-
-		}
-	}
-   
-   static class TTestMedian implements StatisticalMeasure {
-		public void compute(DoubleMatrix2D dataset,
-				int[] classZeroIndices,
-				int[] classOneIndices, double[] scores, boolean fixStdev) {
-			Util.ttestMedian(dataset,
-					classZeroIndices,
-					classOneIndices, scores, fixStdev);
-
-		}
-	}
-
 	
-	static class SNR implements StatisticalMeasure {
-		public void compute(DoubleMatrix2D dataset,
-				int[] classZeroIndices,
-				int[] classOneIndices, double[] scores, boolean fixStdev) {
-			Util.snr(dataset,
-					classZeroIndices,
-					classOneIndices, scores, fixStdev);
-
-		}
-	}
-   
-   static class SNRMedian implements StatisticalMeasure {
-      
-		public void compute(DoubleMatrix2D dataset,
-				int[] classZeroIndices,
-				int[] classOneIndices, double[] scores, boolean fixStdev) {
-			Util.snrMedian(dataset,
-					classZeroIndices,
-					classOneIndices, scores, fixStdev);
-
-		}
-	}
-   
-   static class TTestMinStd implements StatisticalMeasure {
-      double minStd;
-      
-      public TTestMinStd(double min) {
-         this.minStd = min;   
-      }
-      
-		public void compute(DoubleMatrix2D dataset,
-				int[] classZeroIndices,
-				int[] classOneIndices, double[] scores, boolean fixStdev) {
-			Util.ttest(dataset,
-					classZeroIndices,
-					classOneIndices, scores, fixStdev, minStd);
-
-		}
-	}
-
-	static interface StatisticalMeasure {
-		public void compute(DoubleMatrix2D dataset,
-				int[] classZeroIndices,
-				int[] classOneIndices, double[] scores, boolean fixStdev);
-	}
    
    static class Debugger {
       java.util.Map assignment2Occurences = new java.util.HashMap();

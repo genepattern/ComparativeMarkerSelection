@@ -323,19 +323,17 @@ public class MarkerSelection {
 		}
 
 		PrintWriter pw = null;
-		java.util.Vector features = new java.util.Vector(numFeatures);
 
 		try {
 			pw = new PrintWriter(new FileWriter(outputFileName));
 
 			for(int feature = 0; feature < numFeatures; feature++) {
-				int originalIndex = topFeaturesIndices[feature];
-				features.add(dataset.getRowName(originalIndex));
+				int index = topFeaturesIndices[feature];
 
-				pw.println(features.get(feature) + "\t" +
+				pw.println(dataset.getRowName(index) + "\t" +
 						rankBasedPValues[feature] + "\t" +
-						geneSpecificPValues[originalIndex] + "\t " +
-						fwer[feature] + "\t" + fpr[originalIndex] + "\t" + fdr[feature]);
+						geneSpecificPValues[index] + "\t " +
+						fwer[feature] + "\t" + fpr[index] + "\t" + fdr[feature]);
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -350,18 +348,6 @@ public class MarkerSelection {
 			} catch(Exception x) {
 			}
 		}
-
-		double[] topFeaturesGeneSpecificPValues = new double[numFeatures];
-		double[] topFeatures_fpr = new double[numFeatures];
-
-		for(int i = 0; i < numFeatures; i++) {
-			int originalIndex = topFeaturesIndices[i];
-			topFeatures_fpr[i] = fpr[originalIndex];
-			topFeaturesGeneSpecificPValues[i] = geneSpecificPValues[originalIndex];
-
-		}
-		new MarkerSelectionFrame(features, topFeaturesGeneSpecificPValues,
-				rankBasedPValues, fwer, fdr, topFeatures_fpr);
 	}
 
 

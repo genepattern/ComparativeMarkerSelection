@@ -14,8 +14,8 @@ import edu.mit.broad.io.microarray.*;
 import edu.mit.broad.marker.permutation.*;
 
 /**
- * @author     Joshua Gould
- * @created    September 17, 2004
+ *@author     Joshua Gould
+ *@created    September 17, 2004
  */
 public class MarkerSelection {
 
@@ -32,7 +32,7 @@ public class MarkerSelection {
 	final static int TWO_SIDED = 2;
 
 	/**  whether to do one-sided >, one-sided <, or two-sided test */
-	int side;
+	int testDirection;
 
 	int metric;
 	final static int T_TEST = 0;
@@ -75,7 +75,7 @@ public class MarkerSelection {
 		GPUtil.checkDimensions(dataset, classVector);
 
 		this.numPermutations = _numPermutations;
-		this.side = _side;
+		this.testDirection = _side;
 		this.balanced = _balanced;
 		this.outputFileName = _outputFileName;
 		this.complete = complete;
@@ -114,7 +114,7 @@ public class MarkerSelection {
 		String datasetFile = args[0];
 		String clsFile = args[1];
 		int _numPermutations = Integer.parseInt(args[2]);
-		int side = Integer.parseInt(args[3]);
+		int testDirection = Integer.parseInt(args[3]);
 		String outputFileName = args[4];
 		boolean balanced = Boolean.valueOf(args[5]).booleanValue();
 		boolean complete = Boolean.valueOf(args[6]).booleanValue();
@@ -128,28 +128,8 @@ public class MarkerSelection {
 		ExpressionDataImpl e = (ExpressionDataImpl) reader.read(datasetFile);
 		new MarkerSelection(e.getExpressionMatrix(),
 				GPUtil.getClassVector(clsFile),
-				_numPermutations, side, outputFileName, balanced,
+				_numPermutations, testDirection, outputFileName, balanced,
 				complete, fixStdev, metric, permutationsFile);
-	}
-
-
-	/**
-	 *  computes the number of scores in permuted scores that are greater than or
-	 *  equal to the given score
-	 *
-	 * @param  score           the score
-	 * @param  permutedScores  the permuted scores
-	 * @return                 the number of permuted scores >= score
-	 */
-	static int countNumberGreater(double score, double[] permutedScores) {
-		int count = 0;
-		score = Math.abs(score);
-		for(int i = 0, length = permutedScores.length; i < length; i++) {
-			if(Math.abs(permutedScores[i]) >= score) {
-				count++;
-			}
-		}
-		return count;
 	}
 
 
@@ -179,12 +159,14 @@ public class MarkerSelection {
 				classOneIndices, unpermutedScores, fixStdev);
 
 		int sortOrder = -1;
-		if(side == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
+		if(testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
 			sortOrder = Util.ASCENDING;
-		} else if(side == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
+		} else if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
 			sortOrder = Util.DESCENDING;
-		} else {
+		} else if(testDirection == TWO_SIDED) {
 			sortOrder = Util.ABSOLUTE;
+		} else {
+			GPUtil.exit("Unknown test direction");
 		}
 		topFeaturesIndices = Util.getIndices(unpermutedScores, sortOrder);
 
@@ -216,7 +198,6 @@ public class MarkerSelection {
 		}
 		int[] descendingIndices = Util.getIndices(descendingScores, Util.DESCENDING);
 
-			
 		double[] rankBasedPValues = new double[N];
 		double[] all_features_fwer = new double[N];
 		double[] fpr = new double[N];
@@ -248,65 +229,47 @@ public class MarkerSelection {
 
 			statisticalMeasure.compute(dataset,
 					permutedClassZeroIndices,
-					permutedClassOneIndices, permutedScores, fixStdev);// compute scores using permuted class labels
+					permutedClassOneIndices, permutedScores, fixStdev); // compute scores using permuted class labels
 
 			for(int i = 0; i < N; i++) {
 				double score = unpermutedScores[i];
-				if(side == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
+				if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE || testDirection == TWO_SIDED) {
 					if(permutedScores[i] >= score) {
 						geneSpecificPValues[i] += 1.0;
 					}
-				} else if(side == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
+				} else {
 					if(permutedScores[i] <= score) {
 						geneSpecificPValues[i] += 1.0;
 					}
-				} else {
-					if(Math.abs(permutedScores[i]) >= Math.abs(score)) {
-						geneSpecificPValues[i] += 1.0;
-					}
-				}
-			}
-
-			if(side == TWO_SIDED) {
-				for(int i = 0; i < permutedScores.length; i++) {
-					permutedScores[i] = Math.abs(permutedScores[i]);
 				}
 
 			}
 
 			int permutedScoresSortOrder = Util.DESCENDING;
-			if(side == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
+			if(testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
 				permutedScoresSortOrder = Util.ASCENDING;
 			}
 			Util.sort(permutedScores, permutedScoresSortOrder);
 
-			
 			for(int i = 0; i < N; i++) {
 				double score = unpermutedScores[topFeaturesIndices[i]];
 
-				if(side == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
+				if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE || testDirection == TWO_SIDED) {
 					if(permutedScores[i] >= score) {
 						rankBasedPValues[i] += 1.0;
 					}
-				} else if(side == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-					if(permutedScores[i] <= score) {
-						rankBasedPValues[i] += 1.0;
-					}
 				} else {
-					if(Math.abs(permutedScores[i]) >= Math.abs(score)) {
+					if(permutedScores[i] <= score) {
 						rankBasedPValues[i] += 1.0;
 					}
 				}
 			}
 
-			
-			if(side != TWO_SIDED) {
-				for(int i = 0; i < N; i++) {
-					permutedScores[i] = Math.abs(permutedScores[i]);
-				}
-				Util.sort(permutedScores, Util.DESCENDING);
+			for(int i = 0; i < N; i++) {
+				permutedScores[i] = Math.abs(permutedScores[i]);
 			}
-			
+			Util.sort(permutedScores, Util.DESCENDING);
+
 			int j = 0;
 			int count = 0;
 			for(int i = 0; i < N; i++) {
@@ -316,7 +279,7 @@ public class MarkerSelection {
 					j++;
 				}
 				fpr[descendingIndices[i]] += count;
-	
+
 				if(count > 0) {
 					all_features_fwer[descendingIndices[i]]++;
 				}
@@ -329,9 +292,15 @@ public class MarkerSelection {
 			fpr[i] /= N;
 			fpr[i] /= numPermutations;
 			geneSpecificPValues[i] /= numPermutations;
+			if(testDirection == TWO_SIDED) {
+				geneSpecificPValues[i] = 2.0 * Math.min(geneSpecificPValues[i], 1.0 - geneSpecificPValues[i]);
+			}
 			fwer[i] = all_features_fwer[topFeaturesIndices[i]];
 			fwer[i] /= numPermutations;
 			rankBasedPValues[i] /= numPermutations;
+			if(testDirection == TWO_SIDED) {
+				rankBasedPValues[i] = 2.0 * Math.min(rankBasedPValues[i], 1.0 - rankBasedPValues[i]);
+			}
 		}
 
 		double[] fdr = new double[N];
@@ -385,7 +354,7 @@ public class MarkerSelection {
 	/**
 	 *  Reads the next permutation from a file
 	 *
-	 * @return    the next permutation
+	 *@return    the next permutation
 	 */
 	int[] nextPermutation() {
 		try {
@@ -410,7 +379,7 @@ public class MarkerSelection {
 	/**
 	 *  Opens the permutations file for reading
 	 *
-	 * @param  fileName  the file name
+	 *@param  fileName  the file name
 	 */
 	void initFile(String fileName) {
 
@@ -426,8 +395,8 @@ public class MarkerSelection {
 
 
 	/**
-	 * @author     Joshua Gould
-	 * @created    September 29, 2004
+	 *@author     Joshua Gould
+	 *@created    September 29, 2004
 	 */
 	static class TTest implements StatisticalMeasure {
 		public void compute(Dataset dataset,
@@ -442,8 +411,8 @@ public class MarkerSelection {
 
 
 	/**
-	 * @author     Joshua Gould
-	 * @created    September 29, 2004
+	 *@author     Joshua Gould
+	 *@created    September 29, 2004
 	 */
 	static class SNR implements StatisticalMeasure {
 		public void compute(Dataset dataset,
@@ -458,8 +427,8 @@ public class MarkerSelection {
 
 
 	/**
-	 * @author     Joshua Gould
-	 * @created    September 29, 2004
+	 *@author     Joshua Gould
+	 *@created    September 29, 2004
 	 */
 	static interface StatisticalMeasure {
 		public void compute(Dataset dataset,

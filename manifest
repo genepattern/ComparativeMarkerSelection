@@ -1,4 +1,4 @@
-#MarkerSelection
+#ComparativeMarkerSelection
 #Mon Sep 27 16:22:30 EDT 2004
 p8_prefix_when_specified=
 p5_optional=
@@ -47,7 +47,7 @@ p5_default_value=100
 p9_type=java.lang.String
 p2_prefix_when_specified=
 p4_optional=
-p9_default_value=<input.filename_basename>.txt
+p9_default_value=<input.filename_basename>.odf
 p2_type=java.io.File
 serializedModel=
 p6_optional=
@@ -60,7 +60,7 @@ className=edu.mit.wi.omnigene.service.analysis.genepattern.GenePatternAnalysisTa
 p9_name=output.file
 p2_name=cls.filename
 p2_value=
-name=MarkerSelection
+name=ComparativeMarkerSelection
 p3_name=test
 p7_description=Whether to perform balanced permutations
 p2_description=The class file - .cls

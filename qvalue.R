@@ -1,17 +1,47 @@
 compute.qvalue <- function(input.file) {
 	header.lines <- 15
 	odf <- readLines(input.file, n=header.lines)
-	values <- read.table(input.file, sep="\t", row.names=1, skip=header.lines)
-	#colClasses=c("integer", "character", rep(c("double"), 7))
+	values <- read.table(input.file, sep="\t", row.names=1, skip=header.lines, colClasses=c("integer", "character", rep(c("real"), 7)))
+  
+   on.exit(unlink('tmp.txt')) # lazy way of getting the same values if read in data again from output file
+   write.table(values, "tmp.txt", sep="\t", col.names=FALSE, quote=FALSE, append=FALSE)
+   values <- read.table("tmp.txt", sep="\t", row.names=1, skip=0,
+   colClasses=c("integer", "character", rep(c("double"), 7))) 
+   
 	result <- qvalue(p=values[,3])
 	qvalues <- result$qvalues
 	values <- cbind(values, qvalues)
 	write(odf, input.file)
-	write(paste("pi0=",result$pi0, sep=''), input.file, append=TRUE)
-	write(paste("DataLines=",NROW(values), sep=''), input.file, append=TRUE)
+	
+	lambda <- result$lambda
+	
+	pi0 <- rep(0, length(lambda))
+	p2 <- result$pval[order(result$pval)]
+   for (i in 1:length(lambda)) {
+      pi0[i] <- mean(p2 > lambda[i])/(1 - lambda[i])
+   }
+   spi0 <- smooth.spline(lambda, pi0, df = 3)
+   
+   cat("pi0=", sep='', file=input.file, append=TRUE)
+   cat(result$pi0, sep=' ', file=input.file, append=TRUE)
+   cat("\n", sep='', file=input.file, append=TRUE)
+   
+   cat("lambda=", sep='', file=input.file, append=TRUE)
+   cat(lambda, sep=" ", file=input.file, append=TRUE)
+   cat("\n", sep='', file=input.file, append=TRUE)
+   
+   cat("pi0(lambda)=", sep='', file=input.file, append=TRUE)
+   cat(pi0, sep=' ', file=input.file, append=TRUE)
+   cat("\n", sep='', file=input.file, append=TRUE)
+   
+   cat("cubic spline(lambda)=", sep='', file=input.file, append=TRUE)
+   cat(spi0$y, sep=' ', file=input.file, append=TRUE)
+   cat("\n", sep='', file=input.file, append=TRUE)
+   write(paste("DataLines=",NROW(values), sep=''), input.file, append=TRUE)
 	write.table(values, input.file, sep="\t", col.names=FALSE, quote=FALSE, append=TRUE)
 }
 
+        
 qvalue <- function (p, lambda = seq(0, 0.95, 0.05), pi0.method = "smoother", 
     fdr.level = NULL, robust = F, gui = F) 
 {

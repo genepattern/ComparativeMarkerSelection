@@ -340,7 +340,7 @@ public class MarkerSelection {
 			}
 			pw = new PrintWriter(new FileWriter(outputFileName));
 			pw.println("ODF 1.0");
-			pw.println("HeaderLines=12");
+			pw.println("HeaderLines=14");
 			pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tGene Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR\tBonferroni");
 			pw.println("COLUMN_TYPES:int\tString\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat");
 			pw.println("Model=Comparative Marker Selection");

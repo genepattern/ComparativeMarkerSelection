@@ -182,12 +182,13 @@ public class Util {
 					i, class1Mean);
 			double class2Std = Util.standardDeviation(dataset, class2Indices, i,
 					class2Mean);
-					if(fixStdDev) {
-						class1Std = fixStdDev(class1Std, class1Mean);
-						class2Std = fixStdDev(class2Std, class2Mean);
-					}
-			double denom = Math.sqrt((class1Std * class1Std) + (class2Std * class2Std));
-			double Sxi = (class1Mean - class2Mean) / denom;
+			if(fixStdDev) {
+				class1Std = fixStdDev(class1Std, class1Mean);
+				class2Std = fixStdDev(class2Std, class2Mean);
+			}
+			
+			
+			double Sxi = (class1Mean - class2Mean) / Math.sqrt((class1Std * class1Std / classOneIndices.length) + (class2Std * class2Std / class2Indices.length));
 			scores[i] = Sxi;
 		}
 	}

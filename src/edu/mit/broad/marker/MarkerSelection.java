@@ -251,7 +251,11 @@ public class MarkerSelection {
 			}
 			numPermutations = totalPermutations.intValue();
 		} else if(complete && balanced) {
-			GPUtil.exit("Algorithm not yet implemented for complete and balanced permutations.");
+			permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices);
+			java.math.BigInteger totalPermutations = ((BalancedCompletePermuter) (permuter)).getTotal();
+			if((totalPermutations.compareTo(new java.math.BigInteger("" + Integer.MAX_VALUE))) == 1) {
+				GPUtil.exit("Number of permutations exceeds maximum of " + Integer.MAX_VALUE);
+			}
 		}
 		rankBasedScores = new double[numFeatures][numPermutations]; // FIXME
 		geneSpecificScores = new double[numFeatures][numPermutations]; // FIXME

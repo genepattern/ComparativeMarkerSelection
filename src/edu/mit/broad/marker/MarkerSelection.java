@@ -338,18 +338,18 @@ public class MarkerSelection {
 			pw.println("Balanced=" + balanced);
 			pw.println("Complete=" + complete);
 			if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
-				pw.println("Test=Class 0");
+				pw.println("Test Direction=Class 0");
 			} else if(testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-				pw.println("Test=Class 1");
+				pw.println("Test Direction=Class 1");
 			} else {
-				pw.println("Test=2 Sided");
+				pw.println("Test Direction=2 Sided");
 			}
 			pw.println("Class 0=" + classVector.getClassName(0));
 			pw.println("Class 1=" + classVector.getClassName(1));
 			if(metric == SNR) {
-				pw.println("Statistical Measure=SNR");
+				pw.println("Test Statistic=SNR");
 			} else {
-				pw.println("Statistical Measure=T-Test");
+				pw.println("Test Statistic=T-Test");
 			}
 
 			pw.println("Fix Standard Deviation=" + fixStdev);

@@ -336,16 +336,35 @@ public class MarkerSelection {
 						fwer[feature] + "\t" + fpr[index] + "\t" + fdr[feature]);
 			}
 		} catch(Exception e) {
-			e.printStackTrace();
 			GPUtil.exit("An error occurred while saving the output file.", e);
+		} finally {
 
+			if(pw != null) {
+
+				try {
+					pw.close();
+				} catch(Exception x) {
+				}
+			}
 		}
-
-		if(pw != null) {
-
-			try {
-				pw.close();
-			} catch(Exception x) {
+		// output p values
+		try {
+			pw = new PrintWriter(new FileWriter("p.values.txt"));
+			for(int i = 0; i < N; i++) {
+				if(i > 0) {
+					pw.print(" ");
+				}
+				pw.print(fpr[i]);
+			}
+			pw.println();
+		} catch(Exception e) {
+			GPUtil.exit("An error occurred while saving the output file.", e);
+		} finally {
+			if(pw != null) {
+				try {
+					pw.close();
+				} catch(Exception x) {
+				}
 			}
 		}
 	}

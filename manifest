@@ -24,7 +24,7 @@ p4_value=1\=SNR;0\=T-Test
 p6_description=Whether to perform all possible permutations
 p1_description=The input file - .res, .gct, .odf
 p7_name=balanced
-version=1.0
+version=
 taskType=Gene List Selection
 p9_value=
 p4_prefix_when_specified=

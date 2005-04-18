@@ -8,19 +8,19 @@
 	<target name="_init" depends="init">
 		<property name="appfile" value="MarkerSelection.jar"/>
 		<property name="inclds" value="edu/"/>
+		<patternset id="jar.files" includes="Jama-1.0.1.jar,colt.jar"/>
+
 		<path id="library.classpath">
-			
 			<fileset dir="lib">
 				<include name="*.jar"/>
 				<include name="*.zip"/>
 			</fileset>
 			<fileset dir="${libpath}">
-				<include name="*.jar"/>
-				<include name="*.zip"/>
+				<patternset refid="jar.files"/>
 			</fileset>
 		</path>
 	</target>
-
+	
 	
 	<target name="package" depends="_init, clean, compile">
 		<jar basedir="." defaultexcludes="true" excludes="**/*.java, **/*.form, **/.nbattrs" includes="${inclds}" jarfile="${appfile}"></jar>
@@ -37,8 +37,8 @@
 			<classpath refid="library.classpath"/>
 		</javac>
 	</target>
-   
 
+	
 	
 	<target depends="clean,compile" name="build"/>
 	
@@ -46,9 +46,12 @@
 		<antcall target="prezip"/>
 		
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
-			<fileset dir="." includes="version.txt, manifest, ${appfile}, ,qvalue.R"/>
+			<fileset dir="." includes="version.txt, manifest, ${appfile}, qvalue.R"/>
 			<fileset dir="lib" includes="*.jar"/>
 			<fileset dir="." includes="*.pdf"/>
+			<fileset dir="${libpath}">
+				<patternset refid="jar.files"/>
+			</fileset>
 		</zip>
 		<antcall target="postzip"/>
 	</target>

@@ -5,14 +5,14 @@ import java.io.FileReader;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.StringTokenizer;
-import edu.mit.broad.data.expr.*;
+import org.genepattern.data.expr.*;
 
-import edu.mit.broad.data.matrix.*;
-import edu.mit.broad.io.expr.*;
+import org.genepattern.data.matrix.*;
+import org.genepattern.io.expr.*;
 
 import edu.mit.broad.marker.permutation.*;
-import edu.mit.broad.module.AnalysisUtil;
-import edu.mit.broad.stats.*;
+import org.genepattern.module.AnalysisUtil;
+import org.genepattern.stats.*;
 
 /**
  * @author     Joshua Gould
@@ -91,7 +91,7 @@ public class MarkerSelection {
       ExpressionData expressionData = (ExpressionData) AnalysisUtil.readExpressionData(reader, datasetFile, new ExpressionDataCreator());
 
       this.dataset = expressionData.getExpressionMatrix();
-      if(System.getProperty("edu.mit.broad.marker.internal") != null && !clsFile.endsWith(".cls")) {// hidden feature
+     /* if(System.getProperty("edu.mit.broad.marker.internal") != null && !clsFile.endsWith(".cls")) {// hidden feature
          try {
             ClassVector[] cv = new edu.mit.broad.internal.MultiClassReader().read(clsFile, expressionData);
             this.classVector = cv[0];
@@ -105,9 +105,10 @@ public class MarkerSelection {
             AnalysisUtil.exit("An error occurred while reading the file " + AnalysisUtil.getFileName(clsFile), e);
          }
       } else {
-         this.classVector = AnalysisUtil.readCls(clsFile);
+         
       }
-
+		*/
+		this.classVector = AnalysisUtil.readClassVector(clsFile);
       AnalysisUtil.checkDimensions(dataset, classVector);
       if(classVector.getClassCount() != 2) {
          AnalysisUtil.exit("Class file must contain 2 classes.");
@@ -260,12 +261,12 @@ public class MarkerSelection {
          }
       }
 
-      int[] descendingIndices = Util.index(scores, Util.DESCENDING);
+      int[] descendingIndices = Sorting.index(scores, Sorting.DESCENDING);
       double[] absoluteScores = (double[]) scores.clone();
       for(int i = 0; i < N; i++) {
          absoluteScores[i] = Math.abs(absoluteScores[i]);
       }
-      int[] descendingAbsIndices = Util.index(absoluteScores, Util.DESCENDING);
+      int[] descendingAbsIndices = Sorting.index(absoluteScores, Sorting.DESCENDING);
 
       double[] rankBasedPValues = new double[N];
       double[] fwer = new double[N];
@@ -322,7 +323,7 @@ public class MarkerSelection {
 
          }
 
-         Util.sort(permutedScores, Util.DESCENDING);
+         Sorting.sort(permutedScores, Sorting.DESCENDING);
 
          for(int i = 0; i < N; i++) {
             double score = scores[descendingIndices[i]];
@@ -351,7 +352,7 @@ public class MarkerSelection {
          for(int i = 0; i < N; i++) {
             permutedScores[i] = Math.abs(permutedScores[i]);
          }
-         Util.sort(permutedScores, Util.DESCENDING);
+         Sorting.sort(permutedScores, Sorting.DESCENDING);
 
          int j = 0;
          int count = 0;
@@ -381,8 +382,8 @@ public class MarkerSelection {
       }
 
       double[] fdr = new double[N];
-      int[] pValueIndices = Util.index(featureSpecificPValues, Util.ASCENDING);
-      int[] ranks = Util.rank(pValueIndices);
+      int[] pValueIndices = Sorting.index(featureSpecificPValues, Sorting.ASCENDING);
+      int[] ranks = Sorting.rank(pValueIndices);
 
       // check for ties
       for(int i = pValueIndices.length - 1; i > 0; i--) {
@@ -401,7 +402,7 @@ public class MarkerSelection {
 
       // FIXME ensure fdr is monotonically decreasing
       /*
-          int[] fdrIndices = Util.index(fdr, Util.ASCENDING);
+          int[] fdrIndices = Sorting.index(fdr, Sorting.ASCENDING);
           fdr[fdrIndices[N-1]] = Math.min(fdrIndices[N-1], 1);
           for(int i = N-2; i >= 0; i--) {
           fdr[fdrIndices[i]] = Math.min(fdr[fdrIndices[i]], fdr[fdrIndices[i+1]]);
@@ -410,9 +411,9 @@ public class MarkerSelection {
       int[] _ranks = null;
 
       if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE || testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-         _ranks = Util.rank(descendingIndices);
+         _ranks = Sorting.rank(descendingIndices);
       } else if(testDirection == TWO_SIDED) {
-         _ranks = Util.rank(descendingAbsIndices);
+         _ranks = Sorting.rank(descendingAbsIndices);
       }
 
       // write p values to temporary file

@@ -2,7 +2,7 @@ package edu.mit.broad.marker.permutation;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import edu.mit.broad.data.matrix.ClassVector;
+import org.genepattern.data.matrix.ClassVector;
 
 /**
  *  Permuter using covariates

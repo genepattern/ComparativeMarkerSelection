@@ -66,6 +66,7 @@ p8_optional=
 className=edu.mit.wi.omnigene.service.analysis.genepattern.GenePatternAnalysisTask
 p9_name=fix.standard.deviation
 p2_name=cls.filename
+p2_fileFormat=cls
 p2_value=
 name=ComparativeMarkerSelection
 p3_name=test.direction

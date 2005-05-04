@@ -8,13 +8,10 @@
 	<target name="_init" depends="init">
 		<property name="appfile" value="MarkerSelection.jar"/>
 		<property name="inclds" value="edu/"/>
-		<patternset id="jar.files" includes="Jama-1.0.1.jar,colt.jar"/>
+		<patternset id="jar.files" includes="Jama-1.0.1.jar,colt.jar, 
+			gp-modules.jar, trove.jar, broad-cg.jar"/>
 
 		<path id="library.classpath">
-			<fileset dir="lib">
-				<include name="*.jar"/>
-				<include name="*.zip"/>
-			</fileset>
 			<fileset dir="${libpath}">
 				<patternset refid="jar.files"/>
 			</fileset>
@@ -47,7 +44,6 @@
 		
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
 			<fileset dir="." includes="version.txt, manifest, ${appfile}, qvalue.R"/>
-			<fileset dir="lib" includes="*.jar"/>
 			<fileset dir="." includes="*.pdf"/>
 			<fileset dir="${libpath}">
 				<patternset refid="jar.files"/>

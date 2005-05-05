@@ -4,7 +4,7 @@ p8_prefix_when_specified=
 p10_value=
 p5_optional=on
 p6_type=java.lang.String
-commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>Jama-1.0.1.jar<path.separator><libdir>broad-cg.jar<path.separator><libdir>colt.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> <fix.standard.deviation> <test.statistic> <random.seed> <min.std> 
+commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> <fix.standard.deviation> <test.statistic> <random.seed> <min.std> 
 description=Computes significance values for features using several metrics, including FDR(BH), Q Value, FPR, FWER, Rank-Specific P-Value, Feature-Specific P-Value, and Bonferroni.
 p8_default_value=false
 p2_TYPE=FILE

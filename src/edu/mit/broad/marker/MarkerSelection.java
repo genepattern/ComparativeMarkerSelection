@@ -91,9 +91,11 @@ public class MarkerSelection {
       ExpressionData expressionData = (ExpressionData) AnalysisUtil.readExpressionData(reader, datasetFile, new ExpressionDataCreator());
 
       this.dataset = expressionData.getExpressionMatrix();
-     /* if(System.getProperty("edu.mit.broad.marker.internal") != null && !clsFile.endsWith(".cls")) {// hidden feature
-         try {
-            ClassVector[] cv = new edu.mit.broad.internal.MultiClassReader().read(clsFile, expressionData);
+      if(System.getProperty("edu.mit.broad.marker.confounding") != null) {
+         String confoundingClsFile = System.getProperty("edu.mit.broad.marker.confounding");
+         covariate = AnalysisUtil.readClassVector(confoundingClsFile);
+         
+          /*  ClassVector[] cv = new edu.mit.broad.internal.MultiClassReader().read(clsFile, expressionData);
             this.classVector = cv[0];
             if(cv.length > 1) {
                covariate = cv[1];
@@ -101,13 +103,9 @@ public class MarkerSelection {
                   covariate = covariate.union(cv[i]);
                }
             }
-         } catch(Exception e) {
-            AnalysisUtil.exit("An error occurred while reading the file " + AnalysisUtil.getFileName(clsFile), e);
-         }
-      } else {
-         
-      }
-		*/
+            */
+      } 
+		
 		this.classVector = AnalysisUtil.readClassVector(clsFile);
       AnalysisUtil.checkDimensions(dataset, classVector);
       if(classVector.getClassCount() != 2) {
@@ -234,7 +232,7 @@ public class MarkerSelection {
 
       Permuter permuter = null;
       if(covariate != null) {
-         permuter = new UnbalancedRandomCovariatePermuter(classVector, covariate);
+         permuter = new UnbalancedRandomCovariatePermuter(classVector, covariate, seed);
          if(complete || balanced) {
             AnalysisUtil.exit("Covariate permuter not yet implemented for complete or balanced permutations.");
          }

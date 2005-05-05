@@ -17,8 +17,8 @@ public class UnbalancedRandomCovariatePermuter implements Permuter {
    int[] choose;
    int size;
    
-   public UnbalancedRandomCovariatePermuter(ClassVector classVector, ClassVector covariate) {
-      this.random = new cern.jet.random.engine.MersenneTwister();
+   public UnbalancedRandomCovariatePermuter(ClassVector classVector, ClassVector covariate, int seed) {
+      this.random = new cern.jet.random.engine.MersenneTwister(seed);
       this.covariate = covariate;
       this.classOneIndices = classVector.getIndices(1);
       this.choose = new int[covariate.getClassCount()];

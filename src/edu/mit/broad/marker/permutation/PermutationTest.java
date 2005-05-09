@@ -1,6 +1,6 @@
 package edu.mit.broad.marker.permutation;
 import java.util.*;
-
+import org.genepattern.data.matrix.*;
 /**
  * @author     Joshua Gould
  * @created    October 4, 2004
@@ -10,7 +10,7 @@ public class PermutationTest {
 
 
 	public static void main(String[] args) {
-		test2();
+		test5();
 	}
 
 
@@ -25,7 +25,26 @@ public class PermutationTest {
 
 
 	static Map doTest(Permuter permuter, int runs) {
-		HashMap map = new HashMap();
+		
+      HashMap map = new HashMap() {
+         public String toString() {
+            StringBuffer sb = new StringBuffer();
+            for(Iterator keys = keySet().iterator(); keys.hasNext(); ) {
+               String key = (String) keys.next();
+               String firstHalf = key.substring(0, key.length()/2);
+               String secondHalf = key.substring(key.length()/2, key.length());
+               Object value = get(key);
+               sb.append(firstHalf);
+               sb.append("\t");
+               sb.append(secondHalf);
+               sb.append("\t");
+               sb.append(value);
+               sb.append("\n");
+            }
+            return sb.toString();
+         }
+      };
+      
 		for(int i = 0; i < runs; i++) {
 			String p = toString(permuter.next());
 			Integer count = (Integer) map.get(p);
@@ -76,5 +95,18 @@ public class PermutationTest {
 		System.out.println(doTest(permuter, total));
 		// {010101=1, 000111=1, 010011=1, 101010=1, 101100=1, 100101=1, 110010=1, 011010=1, 001011=1, 111000=1, 011100=1, 010110=1, 100110=1, 100011=1, 110001=1, 001101=1, 110100=1, 001110=1, 011001=1, 101001=1}
 	}
+   
+   static void test5() {
+      ClassVector cv = new ClassVector(new String[]{"0","0", "0", "0", "0", "1", "1", "1", "1", "1"});
+         
+      ClassVector covariate = new ClassVector(new String[]{"0","1", "2", "3", "4", 
+      "0", "1", "2", "3", "4"});   
+		UnbalancedRandomCovariatePermuter permuter = new UnbalancedRandomCovariatePermuter(cv, covariate, 123723423);
+		
+		System.out.println(doTest(permuter, 100));
+		// {010101=1, 000111=1, 010011=1, 101010=1, 101100=1, 100101=1, 110010=1, 011010=1, 001011=1, 111000=1, 011100=1, 010110=1, 100110=1, 100011=1, 110001=1, 001101=1, 110100=1, 001110=1, 011001=1, 101001=1}
+	}
+   
+ 
 }
 

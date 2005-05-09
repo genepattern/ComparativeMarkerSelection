@@ -1,103 +1,147 @@
 #ComparativeMarkerSelection
-#Fri Jan 28 11:17:17 EST 2005
-p8_prefix_when_specified=
-p10_value=
-p5_optional=on
-p6_type=java.lang.String
-commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> <fix.standard.deviation> <test.statistic> <random.seed> <min.std> 
-description=Computes significance values for features using several metrics, including FDR(BH), Q Value, FPR, FWER, Rank-Specific P-Value, Feature-Specific P-Value, and Bonferroni.
-p8_default_value=false
-p2_TYPE=FILE
-p7_optional=
-p3_description=The test to perform
-pipelineModel=
-userid=gp-help@broad.mit.edu
-p9_optional=
-p6_name=number.of.permutations
-p2_MODE=IN
-p1_prefix_when_specified=
-p11_prefix_when_specified=
-p8_description=Whether to perform balanced permutations
-p10_description=The name of the output file
-LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00044\:-999999996
-p6_prefix_when_specified=
-p7_type=java.lang.String
-author=Stefano Monti, Gad Getz, Joshua Gould
-p4_value=1\=SNR;0\=T-Test;3\=SNR (median);2\=T-Test (median);4\=T-Test (min std)
-p6_description=The number of permutations to perform
-p1_description=The input file - .res, .gct, .odf
-p7_name=complete
-p10_optional=
-version=Added file format for cls filename
-taskType=Gene List Selection
-p9_value=true\=yes;false\=no
-p4_prefix_when_specified=
-p8_type=java.lang.String
-p3_value=0\=Class 0;1\=Class 1;2\=2 Sided
-p1_type=java.io.File
-p1_default_value=
-p1_fileFormat=gct;res;Dataset
-privacy=public
-os=any
-p9_prefix_when_specified=
-p11_default_value=779948241
-p3_default_value=2
-p8_name=balanced
-cpuType=any
-p1_name=input.filename
-p7_default_value=false
-p4_description=The statistic to use
-p2_optional=
-p8_value=true\=yes;false\=no
-p5_default_value=
-p9_type=java.lang.String
-p2_prefix_when_specified=
-p4_optional=
-p9_default_value=false
-p2_type=java.io.File
-serializedModel=
-p6_optional=
-p7_prefix_when_specified=
-p3_type=java.lang.String
-p11_description=The seed of the random number generator used to produce permutations
-p9_description=Whether to adjust the standard deviation, as is done in GeneCluster
-language=Java
-p8_optional=
-className=edu.mit.wi.omnigene.service.analysis.genepattern.GenePatternAnalysisTask
-p9_name=fix.standard.deviation
-p2_name=cls.filename
-p2_fileFormat=cls
-p2_value=
-name=ComparativeMarkerSelection
-p3_name=test.direction
-p7_description=Whether to perform all possible permutations
-p2_description=The class file - .cls
-p10_type=java.lang.String
-p4_type=java.lang.Integer
-p7_value=true\=yes;false\=no
-p1_value=
-p11_value=
-p10_name=output.file
-p11_optional=
-p10_prefix_when_specified=
-p4_name=test.statistic
-p5_prefix_when_specified=
-quality=production
-p6_value=
-p5_description=The minimum standard deviation if test statistic is T-Test (min std)
-p11_type=java.lang.Integer
-p5_type=java.lang.String
+#Fri May 06 15:47:01 EDT 2005
 JVMLevel=1.4
-p1_TYPE=FILE
-p4_default_value=1
-p10_default_value=<input.filename_basename>.comp.marker.odf
-p11_name=random.seed
-p1_optional=
-p2_default_value=
-p5_name=min.std
-p1_MODE=IN
-p6_default_value=1000
-p5_value=
-p3_prefix_when_specified=
-p3_optional=
+LSID=urn\:lsid\:8080.genepattern.CPB67-896.broad.mit.edu\:genepatternmodules\:1\:2
+author=Joshua Gould, Stefano Monti, Gad Getz
+commandLine=<java> -DR\=<R_HOME> -Dedu.mit.broad.marker.debug=true -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> <fix.standard.deviation> <test.statistic> <random.seed> -m<min.std> -c<confounding.variable.cls.filename>
+cpuType=any
+description=Computes significance values for features using several metrics, including FDR(BH), Q Value, FPR, FWER, Rank-Specific P-Value, Feature-Specific P-Value, and Bonferroni.
+domain=
 fileFormat=Comparative Marker Selection
+language=Java
+name=ComparativeMarkerSelection
+os=any
+p1_MODE=IN
+p1_TYPE=FILE
+p1_default_value=
+p1_description=The input file - .res, .gct, .odf
+p1_domain=
+p1_fileFormat=Dataset;gct;res
+p1_name=input.filename
+p1_optional=
+p1_prefix_when_specified=
+p1_type=java.io.File
+p1_value=
+
+p2_MODE=IN
+p2_TYPE=FILE
+p2_default_value=
+p2_description=The class file - .cls
+p2_domain=
+p2_fileFormat=cls
+p2_name=cls.filename
+p2_optional=
+p2_prefix_when_specified=
+p2_type=java.io.File
+p2_value=
+
+p3_MODE=IN
+p3_TYPE=FILE
+p3_default_value=
+p3_description=The cls file containing the confounding variable
+p3_domain=
+p3_fileFormat=cls
+p3_name=confounding.variable.cls.filename
+p3_optional=on
+p3_prefix_when_specified=
+p3_type=java.io.File
+p3_value=
+
+p4_default_value=2
+p4_description=The test to perform
+p4_domain=
+p4_fileFormat=
+p4_name=test.direction
+p4_optional=
+p4_prefix_when_specified=
+p4_type=java.lang.String
+p4_value=0\=Class 0;1\=Class 1;2\=2 Sided
+
+p5_default_value=1
+p5_description=The statistic to use
+p5_domain=
+p5_fileFormat=
+p5_name=test.statistic
+p5_optional=
+p5_prefix_when_specified=
+p5_type=java.lang.Integer
+p5_value=1\=SNR;0\=T-Test;3\=SNR (median);2\=T-Test (median);4\=T-Test (min std)
+
+p6_default_value=
+p6_description=The minimum standard deviation if test statistic is T-Test (min std)
+p6_domain=
+p6_fileFormat=
+p6_name=min.std
+p6_optional=on
+p6_prefix_when_specified=
+p6_type=java.lang.String
+p6_value=
+
+p7_default_value=1000
+p7_description=The number of permutations to perform
+p7_domain=
+p7_fileFormat=
+p7_name=number.of.permutations
+p7_optional=
+p7_prefix_when_specified=
+p7_type=java.lang.String
+p7_value=
+
+p8_default_value=false
+p8_description=Whether to perform all possible permutations
+p8_domain=
+p8_fileFormat=
+p8_name=complete
+p8_optional=
+p8_prefix_when_specified=
+p8_type=java.lang.String
+p8_value=true\=yes;false\=no
+
+p9_default_value=false
+p9_description=Whether to perform balanced permutations
+p9_domain=
+p9_fileFormat=
+p9_name=balanced
+p9_optional=
+p9_prefix_when_specified=
+p9_type=java.lang.String
+p9_value=true\=yes;false\=no
+
+p10_default_value=false
+p10_description=Whether to adjust the standard deviation, as is done in GeneCluster
+p10_domain=
+p10_fileFormat=
+p10_name=fix.standard.deviation
+p10_optional=
+p10_prefix_when_specified=
+p10_type=java.lang.String
+p10_value=true\=yes;false\=no
+
+p11_default_value=<input.filename_basename>.comp.marker.odf
+p11_description=The name of the output file
+p11_domain=
+p11_fileFormat=
+p11_name=output.file
+p11_optional=
+p11_prefix_when_specified=
+p11_type=java.lang.String
+p11_value=
+
+p12_default_value=779948241
+p12_description=The seed of the random number generator used to produce permutations
+p12_domain=
+p12_fileFormat=
+p12_name=random.seed
+p12_optional=
+p12_prefix_when_specified=
+p12_type=java.lang.Integer
+p12_value=
+
+
+pipelineModel=
+privacy=public
+quality=production
+serializedModel=
+taskType=Gene List Selection
+userid=asdf
+version=Added restricted permutations option

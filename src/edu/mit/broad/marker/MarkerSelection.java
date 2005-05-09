@@ -82,7 +82,7 @@ public class MarkerSelection {
    public MarkerSelection(String datasetFile, String clsFile,
          int _numPermutations, int _side,
          String _outputFileName, boolean _balanced,
-         boolean complete, boolean fixStdev, int metric, double minStd, int seed) {
+         boolean complete, boolean fixStdev, int metric, double minStd, int seed, String confoundingClsFile) {
       this.datasetFile = datasetFile;
       this.clsFile = clsFile;
       this.minStd = minStd;
@@ -91,10 +91,8 @@ public class MarkerSelection {
       ExpressionData expressionData = (ExpressionData) AnalysisUtil.readExpressionData(reader, datasetFile, new ExpressionDataCreator());
 
       this.dataset = expressionData.getExpressionMatrix();
-      if(System.getProperty("edu.mit.broad.marker.confounding") != null) {
-         String confoundingClsFile = System.getProperty("edu.mit.broad.marker.confounding");
+      if(confoundingClsFile != null) {
          covariate = AnalysisUtil.readClassVector(confoundingClsFile);
-         
           /*  ClassVector[] cv = new edu.mit.broad.internal.MultiClassReader().read(clsFile, expressionData);
             this.classVector = cv[0];
             if(cv.length > 1) {
@@ -192,18 +190,29 @@ public class MarkerSelection {
          AnalysisUtil.exit("random seed is not an integer");
       }
       double minStd = -1;
-      if(args.length==11) {
-         try {
-            minStd = Double.parseDouble(args[10]); 
-         } catch(NumberFormatException nfe) {
-            AnalysisUtil.exit("minimum standard deviation is not a number");  
+      String confoundingClsFile = null;
+      for(int i = 10; i < args.length; i++) {
+         String arg = args[i].substring(0, 2);
+         String value = args[i].substring(2, args[i].length());
+         if(value.equals("")) {
+            continue;
+         }
+         if(arg.equals("-m")) {
+            try {
+               minStd = Double.parseDouble(value); 
+            } catch(NumberFormatException nfe) {
+               AnalysisUtil.exit("minimum standard deviation is not a number");  
+            }
+         } else if(arg.equals("-c")) {
+            confoundingClsFile = value;
          }
       }
+     
    
       new MarkerSelection(datasetFile,
             clsFile,
             _numPermutations, testDirection, outputFileName, balanced,
-            complete, fixStdev, metric, minStd, seed);
+            complete, fixStdev, metric, minStd, seed, confoundingClsFile);
    }
 
 
@@ -234,7 +243,7 @@ public class MarkerSelection {
       if(covariate != null) {
          permuter = new UnbalancedRandomCovariatePermuter(classVector, covariate, seed);
          if(complete || balanced) {
-            AnalysisUtil.exit("Covariate permuter not yet implemented for complete or balanced permutations.");
+            AnalysisUtil.exit("Covariate permutations not yet implemented for complete or balanced permutations.");
          }
       } else if(!complete && balanced) {
          permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices, seed);
@@ -281,6 +290,7 @@ public class MarkerSelection {
          } else {
             permutedAssignments = permuter.next();
          }
+        
          if(debugger != null) {
             debugger.addAssignment(permutedAssignments);
          }

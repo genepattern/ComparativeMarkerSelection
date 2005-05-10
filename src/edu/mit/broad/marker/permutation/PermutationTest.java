@@ -97,14 +97,14 @@ public class PermutationTest {
 	}
    
    static void test5() {
-      ClassVector cv = new ClassVector(new String[]{"0","0", "0", "0", "0", "1", "1", "1", "1", "1"});
+      ClassVector cv = new ClassVector(new String[]{"0","0", "0", "0", "0", 
+      "1", "1", "1", "1", "1"});
          
-      ClassVector covariate = new ClassVector(new String[]{"0","1", "2", "3", "4", 
-      "0", "1", "2", "3", "4"});   
+      ClassVector covariate = new ClassVector(new String[]{"0","0", "2", "1", "1", 
+      "0", "1", "1", "1", "1"});   
 		UnbalancedRandomCovariatePermuter permuter = new UnbalancedRandomCovariatePermuter(cv, covariate, 123723423);
 		
 		System.out.println(doTest(permuter, 100));
-		// {010101=1, 000111=1, 010011=1, 101010=1, 101100=1, 100101=1, 110010=1, 011010=1, 001011=1, 111000=1, 011100=1, 010110=1, 100110=1, 100011=1, 110001=1, 001101=1, 110100=1, 001110=1, 011001=1, 101001=1}
 	}
    
  

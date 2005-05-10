@@ -614,6 +614,7 @@ public class MarkerSelection {
 
 
       public void print() {
+         System.out.println("Unique permutations " + assignment2Occurences.size());
          System.out.println("permutations");
          System.out.println(assignment2Occurences);
       }

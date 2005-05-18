@@ -88,7 +88,7 @@ public class MarkerSelection {
       this.minStd = minStd;
       this.seed = seed;
       IExpressionDataReader reader = AnalysisUtil.getExpressionReader(datasetFile);
-      ExpressionData expressionData = (ExpressionData) AnalysisUtil.readExpressionData(reader, datasetFile, new ExpressionDataCreator());
+      ExpressionData expressionData = AnalysisUtil.readExpressionData(reader, datasetFile);
 
       this.dataset = expressionData.getExpressionMatrix();
       if(confoundingClsFile != null) {
@@ -163,7 +163,7 @@ public class MarkerSelection {
       try {
          run(args);  
       } catch(Throwable t) {
-         AnalysisUtil.exit("An error occurred while running the algorithm. Please try again.");
+         AnalysisUtil.exit("An error occurred while running the algorithm.");
       }
    }
    
@@ -234,7 +234,24 @@ public class MarkerSelection {
          }
       }
       scores = new double[N];
-
+		double[] classZeroMeans = new double[N];
+		double[] classOneMeans = new double[N];
+		double[] classZeroStds = new double[N];
+		double[] classOneStds = new double[N];
+	
+		for(int i = 0; i < N; i++) {
+			double classZeroMean = Util.mean(dataset, classZeroIndices, i);
+			double classZeroStd = Util.standardDeviation(dataset, classZeroIndices,
+         	i, classZeroMean);
+		
+			double classOneMean = Util.mean(dataset, classOneIndices, i);
+			double classOneStd = Util.standardDeviation(dataset, classOneIndices,
+         	i, classOneMean);
+			classZeroMeans[i] = classZeroMean;
+			classOneMeans[i] = classOneMean;
+			classZeroStds[i] = classZeroStd;
+			classOneStds[i] = classOneStd;
+		}
       statisticalMeasure.compute(dataset,
             classZeroIndices,
             classOneIndices, scores);
@@ -275,12 +292,12 @@ public class MarkerSelection {
       }
       int[] descendingAbsIndices = Sorting.index(absoluteScores, Sorting.DESCENDING);
 
-      double[] rankBasedPValues = new double[N];
       double[] fwer = new double[N];
       double[] fpr = new double[N];
       double[] featureSpecificPValues = new double[N];
       double[] permutedScores = new double[N];
-
+		double[] maxT = new double[N];
+			
       for(int perm = 0; perm < numPermutations; perm++) {
          int[] permutedClassZeroIndices = null;
          int[] permutedClassOneIndices = null;
@@ -328,35 +345,22 @@ public class MarkerSelection {
                   featureSpecificPValues[i] += 1.0;
                }
             }
-
          }
 
-         Sorting.sort(permutedScores, Sorting.DESCENDING);
-
-         for(int i = 0; i < N; i++) {
-            double score = scores[descendingIndices[i]];
-
-            if(testDirection == TWO_SIDED) {
-               if(score >= 0) {
-                  if(permutedScores[i] >= score) {
-                     rankBasedPValues[i] += 1.0;
-                  }
-               } else {
-                  if(permutedScores[i] <= score) {
-                     rankBasedPValues[i] += 1.0;
-                  }
-               }
-            } else if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
-               if(permutedScores[i] >= score) {
-                  rankBasedPValues[i] += 1.0;
-               }
-            } else {
-               if(permutedScores[i] <= score) {
-                  rankBasedPValues[i] += 1.0;
-               }
+			for(int i = permutedScores.length-2; i >= 0; i--) {
+				double score_i = permutedScores[i];
+				double score_i_plus_1 = permutedScores[i+1];
+				permutedScores[i] = Math.max(score_i, score_i_plus_1);	
+			}
+			
+			for(int i = descendingAbsIndices.length-1; i >= 0; i--) {
+				int index = descendingAbsIndices[i];
+				double score = absoluteScores[index];
+				if(permutedScores[i] >= score) {
+					maxT[index] += 1.0;
             }
-         }
-
+			}	
+				
          for(int i = 0; i < N; i++) {
             permutedScores[i] = Math.abs(permutedScores[i]);
          }
@@ -382,11 +386,11 @@ public class MarkerSelection {
          fpr[i] /= N;
          fpr[i] /= numPermutations;
          featureSpecificPValues[i] /= numPermutations;
+			maxT[i] /= numPermutations;
          if(testDirection == TWO_SIDED) {
             featureSpecificPValues[i] = 2.0 * Math.min(featureSpecificPValues[i], 1.0 - featureSpecificPValues[i]);
          }
          fwer[i] /= numPermutations;
-         rankBasedPValues[i] /= numPermutations;
       }
 
       double[] fdr = new double[N];
@@ -407,15 +411,16 @@ public class MarkerSelection {
          double p = featureSpecificPValues[i];
          fdr[i] = (p * N) / rank;
       }
+		
+		int[] featurePIndices = Sorting.index(featureSpecificPValues, Sorting.ASCENDING);
 
-      // FIXME ensure fdr is monotonically decreasing
-      /*
-          int[] fdrIndices = Sorting.index(fdr, Sorting.ASCENDING);
-          fdr[fdrIndices[N-1]] = Math.min(fdrIndices[N-1], 1);
-          for(int i = N-2; i >= 0; i--) {
-          fdr[fdrIndices[i]] = Math.min(fdr[fdrIndices[i]], fdr[fdrIndices[i+1]]);
-          }
-        */
+      // ensure fdr is monotonically decreasing
+      for(int i = 1; i < featurePIndices.length; i++) { 
+			int index = featurePIndices[i];
+			int indexMinusOne = featurePIndices[i-1];
+			fdr[index] = Math.min(fdr[index], fdr[indexMinusOne]);
+		}
+        
       int[] _ranks = null;
 
       if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE || testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
@@ -434,7 +439,7 @@ public class MarkerSelection {
             tempFileWriter.println(featureSpecificPValues[descendingIndices[i]]);
          }
       } catch(IOException ioe) {
-         AnalysisUtil.exit("An error occurred while saving the output file.", ioe);
+         AnalysisUtil.exit("An error occurred while saving the output file.");
       } finally {
          if(tempFileWriter != null) {
             tempFileWriter.close();
@@ -457,7 +462,7 @@ public class MarkerSelection {
             qvalues[i] = br.readLine();
          }
       } catch(IOException ioe) {
-         AnalysisUtil.exit("An error occurred while saving the output file.", ioe);
+         AnalysisUtil.exit("An error occurred while saving the output file.");
       } finally {
          if(br != null) {
             try {
@@ -477,8 +482,8 @@ public class MarkerSelection {
          pw.println("ODF 1.0");
          String numHeaderLines = seedUsed?"19":"18";
          pw.println("HeaderLines="+numHeaderLines);
-         pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tFeature Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR(BH)\tBonferroni\tQ Value");
-         pw.println("COLUMN_TYPES:int\tString\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat");
+         pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tFeature Specific P Value\tFPR\tFWER\tmaxT P Value Value\tFDR(BH)\tBonferroni\tQ Value\tClass Zero Mean\tClass One Mean\tClass Zero Std\tClass One Std");
+         pw.println("COLUMN_TYPES:int\tString\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat");
          pw.println("Model=Comparative Marker Selection");
          pw.println("Dataset File=" + AnalysisUtil.getFileName(datasetFile));
          pw.println("Class File=" + AnalysisUtil.getFileName(clsFile));
@@ -521,13 +526,40 @@ public class MarkerSelection {
             if(testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
                rank = N - rank + 1;
             }
+				
             double bonferroni = Math.min(featureSpecificPValues[index] * N, 1.0);
-            pw.println(rank + "\t" + dataset.getRowName(index) + "\t" +
-                  scores[index] + "\t" + featureSpecificPValues[index] + "\t " + fpr[index] + "\t" + fwer[index] + "\t" + rankBasedPValues[i] + "\t" + fdr[index] + "\t" + bonferroni + "\t" + qvalues[i]);
+				pw.print(rank);
+				pw.print("\t");
+				pw.print(dataset.getRowName(index));
+				pw.print("\t");
+				pw.print(scores[index]);
+				pw.print("\t");
+				pw.print(featureSpecificPValues[index]);
+				pw.print("\t");
+				pw.print(fpr[index]);
+				pw.print("\t");
+				pw.print(fwer[index]);
+				pw.print("\t");
+				pw.print(maxT[index]);
+				pw.print("\t");
+				pw.print(fdr[index]);
+				pw.print("\t");
+				pw.print(bonferroni);
+				pw.print("\t");
+				pw.print(qvalues[i]);
+				pw.print("\t");
+				pw.print(classZeroMeans[index]);
+				pw.print("\t");
+				pw.print(classOneMeans[index]);
+				pw.print("\t");
+				pw.print(classZeroStds[index]);
+				pw.print("\t");
+				pw.print(classOneStds[index]);
+				pw.println();
          }
 
       } catch(Exception e) {
-         AnalysisUtil.exit("An error occurred while saving the output file.", e);
+         AnalysisUtil.exit("An error occurred while saving the output file.");
       } finally {
 
          if(pw != null) {
@@ -564,7 +596,7 @@ public class MarkerSelection {
 
          return a;
       } catch(Exception e) {
-         AnalysisUtil.exit("An error occurred while reading the permutations file.", e);
+         AnalysisUtil.exit("An error occurred while reading the permutations file.");
          return null;
       }
 
@@ -583,8 +615,7 @@ public class MarkerSelection {
                fileName));
       } catch(Exception e) {
          AnalysisUtil.exit(
-               "An error occurred while reading the permutations file.",
-               e);
+               "An error occurred while reading the permutations file.");
       }
    }
 

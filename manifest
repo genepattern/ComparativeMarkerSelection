@@ -3,7 +3,7 @@
 JVMLevel=1.4
 LSID=urn\:lsid\:8080.genepattern.CPB67-896.broad.mit.edu\:genepatternmodules\:1\:2
 author=Joshua Gould, Stefano Monti, Gad Getz
-commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> <fix.standard.deviation> <test.statistic> <random.seed> -m<min.std> -c<confounding.variable.cls.filename>
+commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> -m<min.std> -c<confounding.variable.cls.filename>
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q Value, FPR, FWER, Rank-Specific P-Value, Feature-Specific P-Value, and Bonferroni.
 domain=
@@ -14,7 +14,7 @@ os=any
 p1_MODE=IN
 p1_TYPE=FILE
 p1_default_value=
-p1_description=The input file - .res, .gct, .odf
+p1_description=The input file - .res, .gct, Dataset
 p1_domain=
 p1_fileFormat=Dataset;gct;res
 p1_name=input.filename
@@ -107,35 +107,25 @@ p9_prefix_when_specified=
 p9_type=java.lang.String
 p9_value=true\=yes;false\=no
 
-p10_default_value=false
-p10_description=Whether to adjust the standard deviation, as is done in GeneCluster
+p10_default_value=<input.filename_basename>.comp.marker.odf
+p10_description=The name of the output file
 p10_domain=
 p10_fileFormat=
-p10_name=fix.standard.deviation
+p10_name=output.file
 p10_optional=
 p10_prefix_when_specified=
 p10_type=java.lang.String
-p10_value=true\=yes;false\=no
+p10_value=
 
-p11_default_value=<input.filename_basename>.comp.marker.odf
-p11_description=The name of the output file
+p11_default_value=779948241
+p11_description=The seed of the random number generator used to produce permutations
 p11_domain=
 p11_fileFormat=
-p11_name=output.file
+p11_name=random.seed
 p11_optional=
 p11_prefix_when_specified=
-p11_type=java.lang.String
+p11_type=java.lang.Integer
 p11_value=
-
-p12_default_value=779948241
-p12_description=The seed of the random number generator used to produce permutations
-p12_domain=
-p12_fileFormat=
-p12_name=random.seed
-p12_optional=
-p12_prefix_when_specified=
-p12_type=java.lang.Integer
-p12_value=
 
 
 pipelineModel=
@@ -143,5 +133,5 @@ privacy=public
 quality=production
 serializedModel=
 taskType=Gene List Selection
-userid=asdf
+userid=GenePattern
 version=Added restricted permutations option

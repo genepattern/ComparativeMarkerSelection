@@ -409,12 +409,12 @@ public class MarkerSelection {
       }
 
       // ensure fdr is monotonically decreasing
-     /* int[] pIndices = Sorting.index(featureSpecificPValues, Sorting.DESCENDING);
+      int[] pIndices = Sorting.index(featureSpecificPValues, Sorting.DESCENDING);
       for(int i = 0; i < pIndices.length-1; i++) { 
 			int highIndex = pIndices[i];
 			int lowIndex = pIndices[i+1]; 
 			fdr[lowIndex] = Math.min(fdr[lowIndex], fdr[highIndex]);
-		}*/
+		}
       
       for(int i = 0; i < N; i++) {
          fdr[i] = Math.min(fdr[i], 1);

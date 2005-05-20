@@ -408,14 +408,17 @@ public class MarkerSelection {
          fdr[i] = (p * N) / rank;
       }
 
-      // FIXME ensure fdr is monotonically decreasing
-      /*
-          int[] fdrIndices = Sorting.index(fdr, Sorting.ASCENDING);
-          fdr[fdrIndices[N-1]] = Math.min(fdrIndices[N-1], 1);
-          for(int i = N-2; i >= 0; i--) {
-          fdr[fdrIndices[i]] = Math.min(fdr[fdrIndices[i]], fdr[fdrIndices[i+1]]);
-          }
-        */
+      // ensure fdr is monotonically decreasing
+     /* int[] pIndices = Sorting.index(featureSpecificPValues, Sorting.DESCENDING);
+      for(int i = 0; i < pIndices.length-1; i++) { 
+			int highIndex = pIndices[i];
+			int lowIndex = pIndices[i+1]; 
+			fdr[lowIndex] = Math.min(fdr[lowIndex], fdr[highIndex]);
+		}*/
+      
+      for(int i = 0; i < N; i++) {
+         fdr[i] = Math.min(fdr[i], 1);
+      }
       int[] _ranks = null;
 
       if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE || testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
@@ -514,7 +517,7 @@ public class MarkerSelection {
             pw.println("Random Seed=" + seed);  
          }
          pw.println("DataLines=" + N);
-         for(int i = 0; i < N; i++) {
+         for(int i = N-1; i>=0; i--) {
             int index = descendingIndices[i];
 
             int rank = _ranks[index];

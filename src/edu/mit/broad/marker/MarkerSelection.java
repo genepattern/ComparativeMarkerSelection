@@ -507,8 +507,8 @@ public class MarkerSelection {
          pw.println("ODF 1.0");
          String numHeaderLines = seedUsed?"17":"16";
          pw.println("HeaderLines="+numHeaderLines);
-         pw.println("Version=1");
-         pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tFeature Specific P Value\tFWER\tFDR(BH)\tBonferroni\tQ Value\tmaxT");
+         
+         pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tFeature P\tFWER\tFDR(BH)\tBonferroni\tQ Value\tmaxT");
          pw.println("Model=Comparative Marker Selection");
          pw.println("Dataset File=" + AnalysisUtil.getFileName(datasetFile));
          pw.println("Class File=" + AnalysisUtil.getFileName(clsFile));

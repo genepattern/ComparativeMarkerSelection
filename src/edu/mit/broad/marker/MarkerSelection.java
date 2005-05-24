@@ -241,17 +241,20 @@ public class MarkerSelection {
 
       Permuter permuter = null;
       if(covariate != null) {
+         seedUsed = true;
          permuter = new UnbalancedRandomCovariatePermuter(classVector, covariate, seed);
          if(complete || balanced) {
             AnalysisUtil.exit("Covariate permutations not yet implemented for complete or balanced permutations.");
          }
       } else if(!complete && balanced) {
+         seedUsed = true;
          permuter = new BalancedRandomPermuter(classZeroIndices, classOneIndices, seed);
-         seedUsed = true;
+         
       } else if(!complete && !balanced) {
-         permuter = new UnbalancedRandomPermuter(classVector.size(), classVector.getIndices(1).length, seed);
          seedUsed = true;
+         permuter = new UnbalancedRandomPermuter(classVector.size(), classVector.getIndices(1).length, seed);
       } else if(complete && !balanced) {
+         seedUsed = false;
          permuter = new UnbalancedCompletePermuter(classVector.size(),
                classZeroIndices.length);
          java.math.BigInteger totalPermutations = ((UnbalancedCompletePermuter) (permuter)).getTotal();
@@ -260,6 +263,7 @@ public class MarkerSelection {
          }
          numPermutations = totalPermutations.intValue();
       } else if(complete && balanced) {
+         seedUsed = false;
          permuter = new BalancedCompletePermuter(classZeroIndices, classOneIndices);
          
          java.math.BigInteger totalPermutations = ((BalancedCompletePermuter) (permuter)).getTotal();

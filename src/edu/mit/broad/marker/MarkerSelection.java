@@ -163,7 +163,7 @@ public class MarkerSelection {
       try {
          run(args);  
       } catch(Throwable t) {
-         AnalysisUtil.exit("An error occurred while running the algorithm. Please try again.");
+         AnalysisUtil.exit("An error occurred while running the algorithm.");
       }
    }
    
@@ -274,13 +274,15 @@ public class MarkerSelection {
          absoluteScores[i] = Math.abs(absoluteScores[i]);
       }
       int[] descendingAbsIndices = Sorting.index(absoluteScores, Sorting.DESCENDING);
-
-      double[] rankBasedPValues = new double[N];
+      
+      //double[] rankBasedPValues = new double[N];
       double[] fwer = new double[N];
       double[] fpr = new double[N];
       double[] featureSpecificPValues = new double[N];
       double[] permutedScores = new double[N];
-
+      double[] monotonicPermutedScores = new double[N];
+      double[] maxT = new double[N];
+     
       for(int perm = 0; perm < numPermutations; perm++) {
          int[] permutedClassZeroIndices = null;
          int[] permutedClassOneIndices = null;
@@ -331,7 +333,7 @@ public class MarkerSelection {
 
          }
 
-         Sorting.sort(permutedScores, Sorting.DESCENDING);
+         /*Sorting.sort(permutedScores, Sorting.DESCENDING);
 
          for(int i = 0; i < N; i++) {
             double score = scores[descendingIndices[i]];
@@ -355,17 +357,35 @@ public class MarkerSelection {
                   rankBasedPValues[i] += 1.0;
                }
             }
-         }
+         }*/
 
          for(int i = 0; i < N; i++) {
             permutedScores[i] = Math.abs(permutedScores[i]);
+            monotonicPermutedScores[i] = permutedScores[i];
          }
+         
+         for(int i = N-2; i >=0; i--) { // make permuted scores monotonicically non-decreasing for maxT
+            int index = descendingAbsIndices[i];
+            int indexPlusOne = descendingAbsIndices[i+1];
+            
+            if(monotonicPermutedScores[indexPlusOne] > monotonicPermutedScores[index]) {
+               monotonicPermutedScores[index] = monotonicPermutedScores[indexPlusOne];
+            }
+            
+         }
+         
+         for(int i = 0; i < N; i++) {
+            if(monotonicPermutedScores[i] >= absoluteScores[i]) {
+               maxT[i] += 1.0;
+            }
+         }
+         
          Sorting.sort(permutedScores, Sorting.DESCENDING);
-
          int j = 0;
          int count = 0;
          for(int i = 0; i < N; i++) {
             double score = absoluteScores[descendingAbsIndices[i]];
+            
             while(j < N && score < permutedScores[j]) {
                count++;
                j++;
@@ -376,6 +396,8 @@ public class MarkerSelection {
                fwer[descendingAbsIndices[i]]++;
             }
          }
+
+         
       }
 
       for(int i = 0; i < N; i++) {
@@ -386,7 +408,8 @@ public class MarkerSelection {
             featureSpecificPValues[i] = 2.0 * Math.min(featureSpecificPValues[i], 1.0 - featureSpecificPValues[i]);
          }
          fwer[i] /= numPermutations;
-         rankBasedPValues[i] /= numPermutations;
+        // rankBasedPValues[i] /= numPermutations;
+         maxT[i] /= numPermutations;
       }
 
       double[] fdr = new double[N];
@@ -419,6 +442,10 @@ public class MarkerSelection {
       for(int i = 0; i < N; i++) {
          fdr[i] = Math.min(fdr[i], 1);
       }
+      
+      for(int i = 1; i < N; i++) { // ensure maxT is monotonic
+        maxT[descendingAbsIndices[i]] = Math.max(maxT[descendingAbsIndices[i]], maxT[descendingAbsIndices[i-1]]);
+		}
       int[] _ranks = null;
 
       if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE || testDirection == CLASS_ZERO_LESS_THAN_CLASS_ONE) {
@@ -478,10 +505,10 @@ public class MarkerSelection {
          }
          pw = new PrintWriter(new FileWriter(outputFileName));
          pw.println("ODF 1.0");
-         String numHeaderLines = seedUsed?"19":"18";
+         String numHeaderLines = seedUsed?"17":"16";
          pw.println("HeaderLines="+numHeaderLines);
-         pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tFeature Specific P Value\tFPR\tFWER\tRank Based P Value\tFDR(BH)\tBonferroni\tQ Value");
-         pw.println("COLUMN_TYPES:int\tString\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat\tfloat");
+         pw.println("Version=1");
+         pw.println("COLUMN_NAMES:Rank\tFeature\tScore\tFeature Specific P Value\tFWER\tFDR(BH)\tBonferroni\tQ Value\tmaxT");
          pw.println("Model=Comparative Marker Selection");
          pw.println("Dataset File=" + AnalysisUtil.getFileName(datasetFile));
          pw.println("Class File=" + AnalysisUtil.getFileName(clsFile));
@@ -509,7 +536,6 @@ public class MarkerSelection {
             pw.println("Test Statistic=T-Test (min std=" + minStd + ")");
          }
 
-         pw.println("Fix Standard Deviation=" + fixStdev);
          for(int i = 0; i < qvalueHeaderLines; i++) {
             pw.println(qvalueHeaders[i]);
          }
@@ -517,7 +543,8 @@ public class MarkerSelection {
             pw.println("Random Seed=" + seed);  
          }
          pw.println("DataLines=" + N);
-         for(int i = N-1; i>=0; i--) {
+       //  for(int i = N-1; i>=0; i--) {
+         for(int i = 0; i < N; i++) {
             int index = descendingIndices[i];
 
             int rank = _ranks[index];
@@ -525,8 +552,23 @@ public class MarkerSelection {
                rank = N - rank + 1;
             }
             double bonferroni = Math.min(featureSpecificPValues[index] * N, 1.0);
-            pw.println(rank + "\t" + dataset.getRowName(index) + "\t" +
-                  scores[index] + "\t" + featureSpecificPValues[index] + "\t " + fpr[index] + "\t" + fwer[index] + "\t" + rankBasedPValues[i] + "\t" + fdr[index] + "\t" + bonferroni + "\t" + qvalues[i]);
+            pw.print(rank);
+            pw.print("\t");
+            pw.print(dataset.getRowName(index));
+            pw.print("\t");
+            pw.print(scores[index]);
+            pw.print("\t");
+            pw.print(featureSpecificPValues[index]);
+            pw.print("\t");
+            pw.print(fwer[index]);
+            pw.print("\t");
+            pw.print(fdr[index]);
+            pw.print("\t");
+            pw.print(bonferroni);
+            pw.print("\t");
+            pw.print(qvalues[i]);
+            pw.print("\t");
+            pw.println(maxT[index]);
          }
 
       } catch(Exception e) {

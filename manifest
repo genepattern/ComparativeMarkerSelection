@@ -134,4 +134,4 @@ quality=production
 serializedModel=
 taskType=Gene List Selection
 userid=GenePattern
-version=Added restricted permutations option
+version=Added restricted permutations option and maxT p-value

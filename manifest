@@ -65,10 +65,10 @@ p5_name=test.statistic
 p5_optional=
 p5_prefix_when_specified=
 p5_type=java.lang.Integer
-p5_value=1\=SNR;0\=T-Test;3\=SNR (median);2\=T-Test (median);4\=T-Test (min std)
+p5_value=1\=SNR;0\=T-Test;3\=SNR (median);2\=T-Test (median);4\=T-Test (min std);5\=SNR (min std);6\=SNR (median, min std)
 
 p6_default_value=
-p6_description=The minimum standard deviation if test statistic is T-Test (min std)
+p6_description=The minimum standard deviation if test statistic includes min std option
 p6_domain=
 p6_fileFormat=
 p6_name=min.std

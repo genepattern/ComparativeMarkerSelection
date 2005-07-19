@@ -41,7 +41,9 @@ public class MarkerSelection {
    final static int T_TEST_MEDIAN = 2;
    final static int SNR_MEDIAN = 3;
    final static int T_TEST_MIN_STD = 4;
-   /**  minimum standard deviation when metric==T_TEST_MIN_STD */
+   final static int SNR_MIN_STD = 5;
+   final static int SNR_MEDIAN_MIN_STD = 6;
+   /**  minimum standard deviation when metric==T_TEST_MIN_STD or SNR_MIN_STD or SNR_MEDIAN_MIN_STD*/
    double minStd;
    /**  whether permutations are balanced */
    boolean balanced;
@@ -136,6 +138,16 @@ public class MarkerSelection {
             AnalysisUtil.exit("Minimum standard deviation must be greater than zero.");
          }
          statisticalMeasure = new TestStatistics.TTestMinStd(minStd, fixStdev);
+      } else if(metric == SNR_MIN_STD) {
+         if(minStd <= 0) {
+            AnalysisUtil.exit("Minimum standard deviation must be greater than zero.");
+         }
+         statisticalMeasure = new TestStatistics.SNRMinStd(minStd);
+      } else if(metric == SNR_MEDIAN_MIN_STD) {
+         if(minStd <= 0) {
+            AnalysisUtil.exit("Minimum standard deviation must be greater than zero.");
+         }
+         statisticalMeasure = new TestStatistics.SNRMedianMinStd(minStd);
       } else {
          AnalysisUtil.exit("Unknown test statistic");
       }

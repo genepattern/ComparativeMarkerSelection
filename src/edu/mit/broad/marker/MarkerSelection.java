@@ -293,7 +293,7 @@ public class MarkerSelection {
       
       //double[] rankBasedPValues = new double[N];
       double[] fwer = new double[N];
-      double[] fpr = new double[N];
+   //   double[] fpr = new double[N];
       double[] featureSpecificPValues = new double[N];
       double[] permutedScores = new double[N];
       double[] monotonicPermutedScores = new double[N];
@@ -406,7 +406,7 @@ public class MarkerSelection {
                count++;
                j++;
             }
-            fpr[descendingAbsIndices[i]] += count;
+            //fpr[descendingAbsIndices[i]] += count;
 
             if(count > 0) {
                fwer[descendingAbsIndices[i]]++;
@@ -417,8 +417,8 @@ public class MarkerSelection {
       }
 
       for(int i = 0; i < N; i++) {
-         fpr[i] /= N;
-         fpr[i] /= numPermutations;
+         //fpr[i] /= N;
+         //fpr[i] /= numPermutations;
          featureSpecificPValues[i] /= numPermutations;
          if(testDirection == TWO_SIDED) {
             featureSpecificPValues[i] = 2.0 * Math.min(featureSpecificPValues[i], 1.0 - featureSpecificPValues[i]);

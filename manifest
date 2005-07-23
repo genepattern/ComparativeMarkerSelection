@@ -3,7 +3,7 @@
 JVMLevel=1.4
 LSID=urn\:lsid\:8080.genepattern.CPB67-896.broad.mit.edu\:genepatternmodules\:1\:2
 author=Joshua Gould, Stefano Monti, Gad Getz
-commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> -m<min.std> -c<confounding.variable.cls.filename>
+commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> -m<min.std> -c<confounding.variable.cls.filename>
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q Value, maxT P-Value, FWER, Feature-Specific P-Value, and Bonferroni.
 fileFormat=Comparative Marker Selection

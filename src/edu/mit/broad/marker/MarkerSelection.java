@@ -351,7 +351,19 @@ public class MarkerSelection {
 		maxT = new double[N];
 
 		permute(numPermutations);
+		
+		// calculate confidence interval
+		for(int i = 0; i < N; i++) {
+			double k = featureSpecificPValues[i];
+			double shape1 = k + 1;
+			double shape2 = numPermutations - k + 1;
+			JSci.maths.statistics.BetaDistribution beta = new JSci.maths.statistics.BetaDistribution(shape1, shape2);
+			double lowerBound = beta.inverse(0.025);
+			double upperBound = beta.inverse(0.975);
+			System.out.println(lowerBound + " "  + upperBound);
+		}
 
+		
 		for (int i = 0; i < N; i++) {
 			//fpr[i] /= N;
 			//fpr[i] /= numPermutations;

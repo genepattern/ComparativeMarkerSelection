@@ -69,7 +69,7 @@ public class MarkerSelection {
 	private double[] scores;
 
 	/** number of rows in input data */
-	private int N;
+	private int numFeatures;
 
 	/** Whether to fix the standard deviation, as is done in GeneCluster */
 	private boolean fixStdev;
@@ -92,10 +92,10 @@ public class MarkerSelection {
 
 	private boolean seedUsed = false;
 
-	/** Family-wise error rate, size=N */
+	/** Family-wise error rate, size=numFeatures */
 	private double[] fwer;
 
-	/** size=N */
+	/** size=numFeatures */
 	private double[] featureSpecificPValues;
 
 	/** Temporary array used in calculation of permuted scores */
@@ -104,10 +104,10 @@ public class MarkerSelection {
 	/** Temporary array used in calculation of permuted score */
 	private double[] monotonicPermutedScores;
 
-	/** size=N */
+	/** size=numFeatures */
 	private double[] maxT;
 
-	/** Absolute value of the test statistic, size=N */
+	/** Absolute value of the test statistic, size=numFeatures */
 	private double[] absoluteScores;
 
 	/** descending sorted indices into absoluteScores */
@@ -153,7 +153,7 @@ public class MarkerSelection {
 		this.balanced = _balanced;
 		this.outputFileName = _outputFileName;
 		this.complete = complete;
-		this.N = dataset.getRowCount();
+		this.numFeatures = dataset.getRowCount();
 		this.fixStdev = fixStdev;
 		this.metric = metric;
 		String permutationsFile = System
@@ -167,11 +167,7 @@ public class MarkerSelection {
 		if (metric == Constants.T_TEST) {
 			statisticalMeasure = new TestStatistics.TTest(fixStdev);
 		} else if (metric == Constants.T_TEST_MEDIAN) {
-			statisticalMeasure = new TestStatistics.TTestMedian(fixStdev);
-		} else if (metric == Constants.SNR) {
-			statisticalMeasure = new TestStatistics.SNR(fixStdev);
-		} else if (metric == Constants.SNR_MEDIAN) {
-			statisticalMeasure = new TestStatistics.SNRMedian(fixStdev);
+			statisticalMeasure = new TestStatistics.TTestMedian();
 		} else if (metric == Constants.T_TEST_MIN_STD) {
 			if (minStd <= 0) {
 				AnalysisUtil
@@ -179,6 +175,18 @@ public class MarkerSelection {
 			}
 			statisticalMeasure = new TestStatistics.TTestMinStd(minStd,
 					fixStdev);
+		}  else if (metric == Constants.T_TEST_MEDIAN_MIN_STD) {
+			if (minStd <= 0) {
+				AnalysisUtil
+						.exit("Minimum standard deviation must be greater than zero.");
+			}
+			statisticalMeasure = new TestStatistics.TTestMedianMinStd(minStd);
+					
+		} else if (metric == Constants.SNR) {
+			statisticalMeasure = new TestStatistics.SNR(fixStdev);
+		} else if (metric == Constants.SNR_MEDIAN) {
+			statisticalMeasure = new TestStatistics.SNRMedian(fixStdev);
+		
 		} else if (metric == Constants.SNR_MIN_STD) {
 			if (minStd <= 0) {
 				AnalysisUtil
@@ -191,6 +199,7 @@ public class MarkerSelection {
 						.exit("Minimum standard deviation must be greater than zero.");
 			}
 			statisticalMeasure = new TestStatistics.SNRMedianMinStd(minStd);
+			
 		} else {
 			AnalysisUtil.exit("Unknown test statistic");
 		}
@@ -286,7 +295,7 @@ public class MarkerSelection {
 						.exit("The number of items in class 1 must be an even number for balanced permutations.");
 			}
 		}
-		scores = new double[N];
+		scores = new double[numFeatures];
 
 		statisticalMeasure.compute(dataset, classZeroIndices, classOneIndices,
 				scores);
@@ -332,40 +341,50 @@ public class MarkerSelection {
 				AnalysisUtil.exit("Number of permutations exceeds maximum of "
 						+ Integer.MAX_VALUE);
 			}
+			numPermutations = totalPermutations.intValue();
 		}
 
 		int[] descendingIndices = Sorting.index(scores, Sorting.DESCENDING);
 		absoluteScores = (double[]) scores.clone();
-		for (int i = 0; i < N; i++) {
+		for (int i = 0; i < numFeatures; i++) {
 			absoluteScores[i] = Math.abs(absoluteScores[i]);
 		}
 		descendingAbsIndices = Sorting
 				.index(absoluteScores, Sorting.DESCENDING);
 
-		//double[] rankBasedPValues = new double[N];
-		fwer = new double[N];
-		//   double[] fpr = new double[N];
-		featureSpecificPValues = new double[N];
-		permutedScores = new double[N];
-		monotonicPermutedScores = new double[N];
-		maxT = new double[N];
+		//double[] rankBasedPValues = new double[numFeatures];
+		fwer = new double[numFeatures];
+		featureSpecificPValues = new double[numFeatures];
+		permutedScores = new double[numFeatures];
+		monotonicPermutedScores = new double[numFeatures];
+		maxT = new double[numFeatures];
 
+		int allowableCost = numFeatures*numPermutations;
+		
 		permute(numPermutations);
 		
-		// calculate confidence interval
-		for(int i = 0; i < N; i++) {
+		// calculate confidence intervals
+		/*for(int i = 0; i < numFeatures; i++) {
 			double k = featureSpecificPValues[i];
+			double p = k/numPermutations[i];
+			if (testDirection == Constants.TWO_SIDED) {
+				p = 2.0 * Math.min(p, 1.0 - p);
+			}
+			
 			double shape1 = k + 1;
 			double shape2 = numPermutations - k + 1;
 			JSci.maths.statistics.BetaDistribution beta = new JSci.maths.statistics.BetaDistribution(shape1, shape2);
 			double lowerBound = beta.inverse(0.025);
 			double upperBound = beta.inverse(0.975);
-			System.out.println(lowerBound + " "  + upperBound);
-		}
-
+		}*/
 		
-		for (int i = 0; i < N; i++) {
-			//fpr[i] /= N;
+		// free temporary storage
+		permutedScores = null;
+		monotonicPermutedScores = null;
+		
+
+		for (int i = 0; i < numFeatures; i++) {
+			//fpr[i] /= numFeatures;
 			//fpr[i] /= numPermutations;
 			featureSpecificPValues[i] /= numPermutations;
 			if (testDirection == Constants.TWO_SIDED) {
@@ -378,7 +397,7 @@ public class MarkerSelection {
 			maxT[i] /= numPermutations;
 		}
 
-		double[] fdr = new double[N];
+		double[] fdr = new double[numFeatures];
 		int[] pValueIndices = Sorting.index(featureSpecificPValues,
 				Sorting.ASCENDING);
 		int[] ranks = Sorting.rank(pValueIndices);
@@ -392,10 +411,10 @@ public class MarkerSelection {
 			}
 		}
 
-		for (int i = 0; i < N; i++) {
+		for (int i = 0; i < numFeatures; i++) {
 			int rank = ranks[i];
 			double p = featureSpecificPValues[i];
-			fdr[i] = (p * N) / rank;
+			fdr[i] = (p * numFeatures) / rank;
 		}
 
 		// ensure fdr is monotonically decreasing
@@ -407,11 +426,11 @@ public class MarkerSelection {
 			fdr[lowIndex] = Math.min(fdr[lowIndex], fdr[highIndex]);
 		}
 
-		for (int i = 0; i < N; i++) {
+		for (int i = 0; i < numFeatures; i++) {
 			fdr[i] = Math.min(fdr[i], 1);
 		}
 
-		for (int i = 1; i < N; i++) { // ensure maxT is monotonic
+		for (int i = 1; i < numFeatures; i++) { // ensure maxT is monotonic
 			maxT[descendingAbsIndices[i]] = Math.max(
 					maxT[descendingAbsIndices[i]],
 					maxT[descendingAbsIndices[i - 1]]);
@@ -431,7 +450,7 @@ public class MarkerSelection {
 		new File(tempFileName).deleteOnExit();
 		try {
 			tempFileWriter = new PrintWriter(new FileWriter(tempFileName));
-			for (int i = 0; i < N; i++) {
+			for (int i = 0; i < numFeatures; i++) {
 				tempFileWriter
 						.println(featureSpecificPValues[descendingIndices[i]]);
 			}
@@ -445,7 +464,7 @@ public class MarkerSelection {
 		}
 
 		edu.mit.broad.marker.qvalue.QValue.qvalue(tempFileName);
-		String[] qvalues = new String[N];
+		String[] qvalues = new String[numFeatures];
 		int qvalueHeaderLines = 4;
 		String[] qvalueHeaders = new String[qvalueHeaderLines];
 		BufferedReader br = null;
@@ -456,7 +475,7 @@ public class MarkerSelection {
 			for (int i = 0; i < qvalueHeaderLines; i++) {
 				qvalueHeaders[i] = br.readLine();
 			}
-			for (int i = 0; i < N; i++) {
+			for (int i = 0; i < numFeatures; i++) {
 				qvalues[i] = br.readLine();
 			}
 		} catch (IOException ioe) {
@@ -499,34 +518,24 @@ public class MarkerSelection {
 			}
 			pw.println("Class 0=" + classVector.getClassName(0));
 			pw.println("Class 1=" + classVector.getClassName(1));
-			if (metric == Constants.SNR) {
-				pw.println("Test Statistic=SNR");
-			} else if (metric == Constants.SNR_MEDIAN) {
-				pw.println("Test Statistic=SNR (median)");
-			} else if (metric == Constants.T_TEST) {
-				pw.println("Test Statistic=T-Test");
-			} else if (metric == Constants.T_TEST_MEDIAN) {
-				pw.println("Test Statistic=T-Test (median)");
-			} else if (metric == Constants.T_TEST_MIN_STD) {
-				pw.println("Test Statistic=T-Test (min std=" + minStd + ")");
-			}
-
+			pw.println("Test Statistic=" + statisticalMeasure.toString());
+			
 			for (int i = 0; i < qvalueHeaderLines; i++) {
 				pw.println(qvalueHeaders[i]);
 			}
 			if (seedUsed) {
 				pw.println("Random Seed=" + seed);
 			}
-			pw.println("DataLines=" + N);
-			//  for(int i = N-1; i>=0; i--) {
-			for (int i = 0; i < N; i++) {
+			pw.println("DataLines=" + numFeatures);
+			//  for(int i = numFeatures-1; i>=0; i--) {
+			for (int i = 0; i < numFeatures; i++) {
 				int index = descendingIndices[i];
 
 				int rank = _ranks[index];
 				if (testDirection == Constants.CLASS_ZERO_LESS_THAN_CLASS_ONE) {
-					rank = N - rank + 1;
+					rank = numFeatures - rank + 1;
 				}
-				double bonferroni = Math.min(featureSpecificPValues[index] * N,
+				double bonferroni = Math.min(featureSpecificPValues[index] * numFeatures,
 						1.0);
 				pw.print(rank);
 				pw.print("\t");
@@ -604,7 +613,7 @@ public class MarkerSelection {
 			statisticalMeasure.compute(dataset, permutedClassZeroIndices,
 					permutedClassOneIndices, permutedScores);// compute scores using permuted class labels
 
-			for (int i = 0; i < N; i++) {
+			for (int i = 0; i < numFeatures; i++) {
 				double score = scores[i];
 				if (testDirection == Constants.TWO_SIDED
 						|| testDirection == Constants.CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
@@ -621,7 +630,7 @@ public class MarkerSelection {
 
 			/*Sorting.sort(permutedScores, Sorting.DESCENDING);
 
-			 for(int i = 0; i < N; i++) {
+			 for(int i = 0; i < numFeatures; i++) {
 			 double score = scores[descendingIndices[i]];
 
 			 if(testDirection == TWO_SIDED) {
@@ -645,12 +654,12 @@ public class MarkerSelection {
 			 }
 			 }*/
 
-			for (int i = 0; i < N; i++) {
+			for (int i = 0; i < numFeatures; i++) {
 				permutedScores[i] = Math.abs(permutedScores[i]);
 				monotonicPermutedScores[i] = permutedScores[i];
 			}
 
-			for (int i = N - 2; i >= 0; i--) { // make permuted scores monotonicically non-decreasing for maxT
+			for (int i = numFeatures - 2; i >= 0; i--) { // make permuted scores monotonicically non-decreasing for maxT
 				int index = descendingAbsIndices[i];
 				int indexPlusOne = descendingAbsIndices[i + 1];
 
@@ -660,7 +669,7 @@ public class MarkerSelection {
 
 			}
 
-			for (int i = 0; i < N; i++) {
+			for (int i = 0; i < numFeatures; i++) {
 				if (monotonicPermutedScores[i] >= absoluteScores[i]) {
 					maxT[i] += 1.0;
 				}
@@ -669,10 +678,10 @@ public class MarkerSelection {
 			Sorting.sort(permutedScores, Sorting.DESCENDING);
 			int j = 0;
 			int count = 0;
-			for (int i = 0; i < N; i++) {
+			for (int i = 0; i < numFeatures; i++) {
 				double score = absoluteScores[descendingAbsIndices[i]];
 
-				while (j < N && score < permutedScores[j]) {
+				while (j < numFeatures && score < permutedScores[j]) {
 					count++;
 					j++;
 				}

@@ -449,8 +449,11 @@ public class MarkerSelection {
 				allowableCost -= numFeaturesToPermute*permutationsToPerform;
 				numFeaturesToPermute = lengthOfIndicesToPermute;
 				permutationsToPerform = 100; // FIXME
-				// FIXME should be keep permuting?
-				System.out.println("allowableCost " + allowableCost);
+				
+				long newCost = allowableCost - numFeaturesToPermute*permutationsToPerform;
+				if(newCost < 0) {
+					permutationsToPerform = (int)(allowableCost/numFeaturesToPermute);
+				}
 			}
 			
 			System.out.println("Features left " + numFeaturesToPermute);

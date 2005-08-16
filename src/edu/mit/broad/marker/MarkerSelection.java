@@ -17,6 +17,7 @@ import org.genepattern.module.AnalysisUtil;
 import org.genepattern.stats.ITestStatistic;
 import org.genepattern.stats.Sorting;
 import org.genepattern.stats.TestStatistics;
+import org.genepattern.ioutil.Util;
 
 import edu.mit.broad.marker.permutation.BalancedCompletePermuter;
 import edu.mit.broad.marker.permutation.BalancedRandomPermuter;
@@ -81,6 +82,9 @@ public class MarkerSelection {
 
 	/** Input cls file name */
 	private String clsFile;
+	
+	/** Input confounding variable cls file name */
+	private String confoundingClsFile;
 
 	/** Covariate assignments */
 	private ClassVector covariate;
@@ -115,47 +119,35 @@ public class MarkerSelection {
 
 	private Permuter permuter;
 
-	public MarkerSelection(String datasetFile, String clsFile,
+	public MarkerSelection(DoubleMatrix2D dataset, String datasetFile, 
+			ClassVector classVector, String clsFile,
 			int _numPermutations, int _side, String _outputFileName,
 			boolean _balanced, boolean complete, boolean fixStdev, int metric,
-			double minStd, int seed, String confoundingClsFile) {
+			double minStd, int seed, ClassVector confoundingClassVector,
+			String confoundingClsFile) {
+		this.dataset = dataset;
 		this.datasetFile = datasetFile;
-		this.clsFile = clsFile;
-		this.minStd = minStd;
-		this.seed = seed;
-		IExpressionDataReader reader = AnalysisUtil
-				.getExpressionReader(datasetFile);
-		ExpressionData expressionData = (ExpressionData) AnalysisUtil
-				.readExpressionData(reader, datasetFile,
-						new ExpressionDataCreator());
-
-		this.dataset = expressionData.getExpressionMatrix();
-		if (confoundingClsFile != null) {
-			covariate = AnalysisUtil.readClassVector(confoundingClsFile);
-			/*  ClassVector[] cv = new edu.mit.broad.internal.MultiClassReader().read(clsFile, expressionData);
-			 this.classVector = cv[0];
-			 if(cv.length > 1) {
-			 covariate = cv[1];
-			 for(int i = 2; i < cv.length; i++) {
-			 covariate = covariate.union(cv[i]);
-			 }
-			 }
-			 */
-		}
-
 		this.classVector = AnalysisUtil.readClassVector(clsFile);
 		AnalysisUtil.checkDimensions(dataset, classVector);
 		if (classVector.getClassCount() != 2) {
 			AnalysisUtil.exit("Class file must contain 2 classes.");
 		}
+		this.clsFile = clsFile;
 		this.numPermutations = _numPermutations;
 		this.testDirection = _side;
-		this.balanced = _balanced;
 		this.outputFileName = _outputFileName;
+		this.balanced = _balanced;
 		this.complete = complete;
-		this.numFeatures = dataset.getRowCount();
 		this.fixStdev = fixStdev;
 		this.metric = metric;
+		this.minStd = minStd;
+		this.seed = seed;
+		this.covariate = confoundingClassVector;
+		this.confoundingClsFile = confoundingClsFile;
+		
+		
+		this.numFeatures = dataset.getRowCount();
+		
 		String permutationsFile = System
 				.getProperty("edu.mit.broad.marker.perm");
 		if (permutationsFile != null) {
@@ -273,9 +265,46 @@ public class MarkerSelection {
 			}
 		}
 
-		new MarkerSelection(datasetFile, clsFile, _numPermutations,
-				testDirection, outputFileName, balanced, complete, fixStdev,
-				metric, minStd, seed, confoundingClsFile);
+		ClassVector classVector = AnalysisUtil.readClassVector(clsFile);
+		IExpressionDataReader reader = AnalysisUtil
+				.getExpressionReader(datasetFile);
+		ExpressionData expressionData = AnalysisUtil
+				.readExpressionData(reader, datasetFile);
+
+		DoubleMatrix2D dataset = expressionData.getExpressionMatrix();
+		
+		ClassVector confoundingClassVector = null;
+		if (confoundingClsFile != null) {
+			confoundingClassVector = AnalysisUtil.readClassVector(confoundingClsFile);
+			/*  ClassVector[] cv = new edu.mit.broad.internal.MultiClassReader().read(clsFile, expressionData);
+			 this.classVector = cv[0];
+			 if(cv.length > 1) {
+			 covariate = cv[1];
+			 for(int i = 2; i < cv.length; i++) {
+			 covariate = covariate.union(cv[i]);
+			 }
+			 }
+			 */
+		}
+
+
+		if(classVector.getClassCount() > 2) {
+			ClassVector[] oneVersusAll = classVector.getOneVersusAll();
+			String baseOutputFileName = Util.getBaseFileName(outputFileName);
+			for(int i = 0; i < classVector.getClassCount(); i++) {
+				String tempOutputFileName = baseOutputFileName + "." + 
+					classVector.getClassName(i) + ".vs.All.odf";
+				new MarkerSelection(dataset, datasetFile, oneVersusAll[i], 
+				clsFile, _numPermutations, testDirection, tempOutputFileName, 
+				balanced, complete, fixStdev, metric, minStd, seed, 
+				confoundingClassVector, confoundingClsFile);
+			}
+		} else {
+			new MarkerSelection(dataset, datasetFile, classVector, clsFile,
+				_numPermutations, testDirection, outputFileName, balanced, 
+				complete, fixStdev, metric, minStd, seed, 
+				confoundingClassVector, confoundingClsFile);
+		}
 	}
 
 	final void computePValues() {
@@ -498,7 +527,14 @@ public class MarkerSelection {
 			}
 			pw = new PrintWriter(new FileWriter(outputFileName));
 			pw.println("ODF 1.0");
-			String numHeaderLines = seedUsed ? "17" : "16";
+			int numHeaderLines = 16;
+			if(seedUsed) {
+				numHeaderLines++;
+			}
+			if(covariate!=null) {
+				numHeaderLines++;
+			}
+			
 			pw.println("HeaderLines=" + numHeaderLines);
 
 			pw
@@ -506,6 +542,10 @@ public class MarkerSelection {
 			pw.println("Model=Comparative Marker Selection");
 			pw.println("Dataset File=" + AnalysisUtil.getFileName(datasetFile));
 			pw.println("Class File=" + AnalysisUtil.getFileName(clsFile));
+			if(covariate!=null) {
+				pw.println("Confounding Class File=" + 
+					AnalysisUtil.getFileName(confoundingClsFile));
+			}
 			pw.println("Permutations=" + numPermutations);
 			pw.println("Balanced=" + balanced);
 			pw.println("Complete=" + complete);

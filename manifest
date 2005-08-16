@@ -1,20 +1,23 @@
-#ComparativeMarkerSelection
-#Fri May 06 15:47:01 EDT 2005
 JVMLevel=1.4
 LSID=urn\:lsid\:8080.genepattern.CPB67-896.broad.mit.edu\:genepatternmodules\:1\:2
 author=Joshua Gould, Stefano Monti, Gad Getz
-commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> -m<min.std> -c<confounding.variable.cls.filename>
+commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> <speedup> <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename>
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q Value, maxT P-Value, FWER, Feature-Specific P-Value, and Bonferroni.
 fileFormat=Comparative Marker Selection
 language=Java, R
 name=ComparativeMarkerSelection
 os=any
+privacy=public
+quality=production
+taskType=Gene List Selection
+userid=GenePattern
+version=Added permutation speedup option
 
 p1_MODE=IN
 p1_TYPE=FILE
 p1_default_value=
-p1_description=The input file - .res, .gct, Dataset
+p1_description=The input file - .res, .gct, .odf type=Dataset
 p1_domain=
 p1_fileFormat=Dataset;gct;res
 p1_name=input.filename
@@ -117,21 +120,29 @@ p10_prefix_when_specified=
 p10_type=java.lang.Integer
 p10_value=
 
-p11_default_value=<input.filename_basename>.comp.marker.odf
-p11_description=The name of the output file
-p11_domain=
-p11_fileFormat=
-p11_name=output.file
+p11_default_value=true
+p11_description=Whether to smooth p-values
+p11_name=smooth.p.values
 p11_optional=
 p11_prefix_when_specified=
 p11_type=java.lang.String
-p11_value=
+p11_value=true\=yes;false\=no
 
+p12_default_value=false
+p12_description=Whether to attempt to speedup the calculation
+p12_name=speedup
+p12_optional=
+p12_prefix_when_specified=
+p12_type=java.lang.String
+p12_value=true\=yes;false\=no
 
-pipelineModel=
-privacy=public
-quality=production
-serializedModel=
-taskType=Gene List Selection
-userid=GenePattern
-version=Added restricted permutations option and maxT p-value
+p13_default_value=<input.filename_basename>.comp.marker.odf
+p13_description=The name of the output file
+p13_domain=
+p13_fileFormat=
+p13_name=output.file
+p13_optional=
+p13_prefix_when_specified=
+p13_type=java.lang.String
+p13_value=
+

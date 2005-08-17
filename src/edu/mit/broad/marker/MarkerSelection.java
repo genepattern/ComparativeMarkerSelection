@@ -615,7 +615,7 @@ public class MarkerSelection {
 			}
 			pw = new PrintWriter(new FileWriter(outputFileName));
 			pw.println("ODF 1.0");
-			int numHeaderLines = 16;
+			int numHeaderLines = 18;
 			if(seedUsed) {
 				numHeaderLines++;
 			}
@@ -654,6 +654,9 @@ public class MarkerSelection {
 			if (seedUsed) {
 				pw.println("Random Seed=" + seed);
 			}
+			
+			pw.println("Speedup=" + speedUp);
+			pw.println("Smooth p-values=" + smoothPValues);
 			pw.println("DataLines=" + numFeatures);
 	
 			for (int i = 0; i < numFeatures; i++) {

@@ -453,6 +453,7 @@ public class MarkerSelection {
 				long newCost = allowableCost - numFeaturesToPermute*permutationsToPerform;
 				if(newCost < 0) {
 					permutationsToPerform = (int)(allowableCost/numFeaturesToPermute);
+					allowableCost = 0;
 				}
 			}
 			
@@ -625,8 +626,13 @@ public class MarkerSelection {
 			
 			pw.println("HeaderLines=" + numHeaderLines);
 
+			if(!speedUp) {
 			pw
 					.println("COLUMN_NAMES:Rank\tFeature\tScore\tFeature P\tFWER\tFDR(BH)\tBonferroni\tQ Value\tmaxT");
+			} else {
+				pw
+					.println("COLUMN_NAMES:Rank\tFeature\tScore\tFeature P\tFDR(BH)\tBonferroni\tQ Value");
+			}
 			pw.println("Model=Comparative Marker Selection");
 			pw.println("Dataset File=" + AnalysisUtil.getFileName(datasetFile));
 			pw.println("Class File=" + AnalysisUtil.getFileName(clsFile));
@@ -678,21 +684,19 @@ public class MarkerSelection {
 				pw.print("\t");
 				if(!speedUp) {
 					pw.print(fwer[index]);
-				} else {
-					pw.print("NaN");
-				}
-				pw.print("\t");
+					pw.print("\t");
+				} 
+				
 				pw.print(fdr[index]);
 				pw.print("\t");
 				pw.print(bonferroni);
 				pw.print("\t");
 				pw.print(qvalues[i]);
-				pw.print("\t");
 				if(!speedUp) {
-					pw.println(maxT[index]);
-				} else {
-					pw.println("NaN");
-				}
+					pw.print("\t");
+					pw.print(maxT[index]);
+				} 
+				pw.println();
 			}
 
 		} catch (Exception e) {

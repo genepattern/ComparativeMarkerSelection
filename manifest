@@ -1,7 +1,6 @@
 JVMLevel=1.4
-LSID=urn\:lsid\:8080.genepattern.CPB67-896.broad.mit.edu\:genepatternmodules\:1\:2
-author=Joshua Gould, Stefano Monti, Gad Getz
-commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> <speedup> <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename>
+author=Joshua Gould, Gad Getz, Stefano Monti
+commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> <significance.booster> <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -t<theta>
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q Value, maxT P-Value, FWER, Feature-Specific P-Value, and Bonferroni.
 fileFormat=Comparative Marker Selection
@@ -12,7 +11,7 @@ privacy=public
 quality=production
 taskType=Gene List Selection
 userid=GenePattern
-version=Added permutation speedup option
+version=Added significance booster option
 
 p1_MODE=IN
 p1_TYPE=FILE
@@ -129,20 +128,28 @@ p11_type=java.lang.String
 p11_value=true\=yes;false\=no
 
 p12_default_value=false
-p12_description=Whether to attempt to speedup the calculation
-p12_name=speedup
-p12_optional=
+p12_description=Whether to attempt to increase the p-value confidence for significant features
+p12_name=significance.booster
+p12_optional=on
 p12_prefix_when_specified=
 p12_type=java.lang.String
 p12_value=true\=yes;false\=no
 
-p13_default_value=<input.filename_basename>.comp.marker.odf
-p13_description=The name of the output file
-p13_domain=
-p13_fileFormat=
-p13_name=output.file
-p13_optional=
+p13_default_value=0.20
+p13_description=Value for removing features when using significance booster
+p13_name=theta
+p13_optional=on
 p13_prefix_when_specified=
-p13_type=java.lang.String
+p13_type=java.lang.Float
 p13_value=
+
+p14_default_value=<input.filename_basename>.comp.marker.odf
+p14_description=The name of the output file
+p14_domain=
+p14_fileFormat=
+p14_name=output.file
+p14_optional=
+p14_prefix_when_specified=
+p14_type=java.lang.String
+p14_value=
 

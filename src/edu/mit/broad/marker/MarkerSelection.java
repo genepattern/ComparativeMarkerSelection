@@ -146,7 +146,7 @@ public class MarkerSelection {
 			int _numPermutations, int _side, String _outputFileName,
 			boolean _balanced, boolean complete, int metric,
 			double minStd, int seed, ClassVector confoundingClassVector,
-			String confoundingClsFile, boolean speedup, boolean smoothPValues) {
+			String confoundingClsFile, boolean removeFeatures, double theta, boolean smoothPValues) {
 		this.dataset = dataset;
 		this.dataArray = dataset.getArray();
 		this.datasetFile = datasetFile;
@@ -166,9 +166,10 @@ public class MarkerSelection {
 		this.seed = seed;
 		this.covariate = confoundingClassVector;
 		this.confoundingClsFile = confoundingClsFile;
-		this.removeFeatures = speedup;
+		this.removeFeatures = removeFeatures;
+		this.theta = theta;
 		this.smoothPValues = smoothPValues;
-		if(complete && speedup) {
+		if(complete && removeFeatures) {
 			AnalysisUtil.exit("Speedup option can only be used when performing random permutations.");
 		}
 		
@@ -274,11 +275,12 @@ public class MarkerSelection {
 		} catch (NumberFormatException nfe) {
 			AnalysisUtil.exit("random seed is not an integer");
 		}
-		boolean speedup = Boolean.valueOf(args[10]).booleanValue();
+		boolean removeFeatures = Boolean.valueOf(args[10]).booleanValue();
 		boolean smoothPValues = Boolean.valueOf(args[11]).booleanValue();
 		
 		double minStd = -1;
 		String confoundingClsFile = null;
+		double theta = -1;
 		for (int i = 12; i < args.length; i++) {
 			String arg = args[i].substring(0, 2);
 			String value = args[i].substring(2, args[i].length());
@@ -294,6 +296,13 @@ public class MarkerSelection {
 				}
 			} else if (arg.equals("-c")) {
 				confoundingClsFile = value;
+			} else if(arg.equals("-t")) {
+				try {
+					theta = Double.parseDouble(value);
+				} catch (NumberFormatException nfe) {
+					AnalysisUtil
+							.exit("Theta is not a number");
+				}
 			}
 		}
 
@@ -329,13 +338,13 @@ public class MarkerSelection {
 				new MarkerSelection(dataset, datasetFile, oneVersusAll[i], 
 				clsFile, _numPermutations, testDirection, tempOutputFileName, 
 				balanced, complete, metric, minStd, seed, 
-				confoundingClassVector, confoundingClsFile, speedup, smoothPValues);
+				confoundingClassVector, confoundingClsFile, removeFeatures, theta, smoothPValues);
 			}
 		} else {
 			new MarkerSelection(dataset, datasetFile, classVector, clsFile,
 				_numPermutations, testDirection, outputFileName, balanced, 
 				complete, metric, minStd, seed, 
-				confoundingClassVector, confoundingClsFile, speedup, smoothPValues);
+				confoundingClassVector, confoundingClsFile, removeFeatures, theta, smoothPValues);
 		}
 	}
 
@@ -427,7 +436,7 @@ public class MarkerSelection {
 		permute();
 		long endTime = System.currentTimeMillis();
 		long elapsed = endTime-startTime;
-		System.out.println("elapsed " + elapsed/1000.0 + " seconds");
+		System.out.println("elapsed time " + elapsed/1000.0 + " seconds");
 			
 		// free temporary storage
 		monotonicPermutedScores = null;
@@ -441,14 +450,17 @@ public class MarkerSelection {
 			double k = featureSpecificPValues[i];
 			double p;
 			if (smoothPValues) {
-				p = (k + 1)/ (N + 2);
+				p = (k + 1)/(N + 2);
 			} else {
 				p = k/N;
 			}
 			if (testDirection == Constants.TWO_SIDED) {
-				p = 2.0 * Math.min(
-						p,
-						1.0 - p);
+				double oneMinusP = 1.0 - p; // FIXME is this correct when smoothing?
+				if(oneMinusP < p) {
+					 p = oneMinusP;
+				}
+				p *= 2;
+				
 				if(p==0) {
 					// ensure not degenerate case where profile is completely flat
 					// TODO handle cases where profile is flat (but not completely)
@@ -468,7 +480,6 @@ public class MarkerSelection {
 			featureSpecificPValues[i] = p;
 			double shape1 = k + 1;
 			double shape2 = N - k + 1;
-			
 			JSci.maths.statistics.BetaDistribution beta = 
 				new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
 			lowerBound[i] = beta.inverse(0.025);
@@ -594,14 +605,11 @@ public class MarkerSelection {
 			}
 			pw = new PrintWriter(new FileWriter(outputFileName));
 			pw.println("ODF 1.0");
-			int numHeaderLines = 17;
+			int numHeaderLines = 18;
 			if(seedUsed) {
 				numHeaderLines++;
 			}
 			if(covariate!=null) {
-				numHeaderLines++;
-			}
-			if(!removeFeatures) {
 				numHeaderLines++;
 			}
 			
@@ -651,7 +659,10 @@ public class MarkerSelection {
 				pw.println("Random Seed=" + seed);
 			}
 			
-			pw.println("Remove Features=" + removeFeatures); // FIXME
+			pw.println("Remove Features=" + removeFeatures);
+			if(removeFeatures) {
+				pw.println("Theta=" + theta);
+			}
 			pw.println("Smooth p-values=" + smoothPValues);
 			pw.println("DataLines=" + numFeatures);
 	
@@ -722,12 +733,12 @@ public class MarkerSelection {
 
 	private final void permute() {
 		BigInteger maxLong = BigInteger.valueOf(Long.MAX_VALUE);
-		BigInteger r = BigInteger.valueOf(numFeatures).multiply(
+		BigInteger bigIntBank = BigInteger.valueOf(numFeatures).multiply(
 			BigInteger.valueOf(numPermutations));
-		if(r.compareTo(maxLong) > 0) {
+		if(bigIntBank.compareTo(maxLong) > 0) {
 			AnalysisUtil.exit("Arithmetic overflow");
 		}
-		long bank = r.longValue();
+		long bank = bigIntBank.longValue();
 		int[] featureIndicesToPermute = null;
 		permutationsPerFeature = new int[numFeatures];
 		if(removeFeatures) {
@@ -803,37 +814,14 @@ public class MarkerSelection {
 					permutationsPerFeature[index]++;
 					double k = featureSpecificPValues[index];
 					int N = permutationsPerFeature[index];
-	
-					double d2 = -Double.MAX_VALUE;
-					/*if(betaCriteria) {
-						double shape1 = k + 1;
-						double shape2 = N - k + 1;
-			
-						JSci.maths.statistics.BetaDistribution beta = 
-							new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
-						double lowerBound = beta.inverse(0.025);
-						double upperBound = beta.inverse(0.975);
-						d = (upperBound-lowerBound)/((upperBound+lowerBound)/2.0);
-						if(testDirection == Constants.TWO_SIDED) {
-							k = N-k;
-							shape1 = k + 1;
-							shape2 = N - k + 1;
-			
-							beta = 
-							new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
-							lowerBound = beta.inverse(0.025);
-							upperBound = beta.inverse(0.975);
-							d2 = (upperBound-lowerBound)/((upperBound+lowerBound)/2.0);
-						}*/
-			
 					double d = 2*1.96*Math.sqrt((N+1-k)/(N*(k+1)));
+					double d2 = -Double.MAX_VALUE;
 					
 					if(testDirection == Constants.TWO_SIDED) {
 						k = N-k;
 						d2 = 2*1.96*Math.sqrt((N+1-k)/(N*(k+1)));
 					}
 					
-	
 					if (d >= theta || d2 >= theta) { // include marker
 						featureIndicesToPermute[lengthOfIndicesToPermute] = index;
 						lengthOfIndicesToPermute++;

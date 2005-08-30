@@ -455,7 +455,7 @@ public class MarkerSelection {
 				p = k/N;
 			}
 			if (testDirection == Constants.TWO_SIDED) {
-				double oneMinusP = 1.0 - p; // FIXME is this correct when smoothing?
+				double oneMinusP = 1.0 - p;
 				if(oneMinusP < p) {
 					 p = oneMinusP;
 				}
@@ -484,6 +484,10 @@ public class MarkerSelection {
 				new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
 			lowerBound[i] = beta.inverse(0.025);
 			upperBound[i] = beta.inverse(0.975);
+			if (testDirection == Constants.TWO_SIDED && upperBound[i] > 0.5) {
+				lowerBound[i] = beta.inverse(0.05);
+				upperBound[i] = 1;
+			}
 			
 			if (!removeFeatures) {
 				fwer[i] /= N;

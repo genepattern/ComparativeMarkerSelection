@@ -128,7 +128,7 @@ p11_type=java.lang.String
 p11_value=true\=yes;false\=no
 
 p12_default_value=false
-p12_description=Whether to attempt to increase the p-value confidence for significant features
+p12_description=Whether to attempt to increase the p-value accuracy for significant features
 p12_name=significance.booster
 p12_optional=on
 p12_prefix_when_specified=

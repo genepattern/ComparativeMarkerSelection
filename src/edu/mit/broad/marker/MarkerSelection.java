@@ -478,15 +478,22 @@ public class MarkerSelection {
 				} 
 			}
 			featureSpecificPValues[i] = p;
-			double shape1 = k + 1;
-			double shape2 = N - k + 1;
-			JSci.maths.statistics.BetaDistribution beta = 
-				new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
-			lowerBound[i] = beta.inverse(0.025);
-			upperBound[i] = beta.inverse(0.975);
-			if (testDirection == Constants.TWO_SIDED && upperBound[i] > 0.5) {
-				lowerBound[i] = beta.inverse(0.05);
-				upperBound[i] = 1;
+			
+			if (testDirection == Constants.TWO_SIDED) {
+				k *=2;
+				double shape1 = k + 1;
+				double shape2 = N - k + 1;
+				JSci.maths.statistics.BetaDistribution beta = 
+					new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
+				lowerBound[i] = beta.inverse(0.025);
+				upperBound[i] = beta.inverse(0.975);
+			} else {
+				double shape1 = k + 1;
+				double shape2 = N - k + 1;
+				JSci.maths.statistics.BetaDistribution beta = 
+					new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
+				lowerBound[i] = beta.inverse(0.025);
+				upperBound[i] = beta.inverse(0.975);
 			}
 			
 			if (!removeFeatures) {

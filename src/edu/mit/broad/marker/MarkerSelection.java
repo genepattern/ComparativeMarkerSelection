@@ -96,7 +96,7 @@ public class MarkerSelection {
 	/** Seed for generating permutations */
 	private int seed;
 
-	/** Whether a seed for used for generating permutations */
+	/** Whether a seed was used for generating permutations */
 	private boolean seedUsed = false;
 
 	/** Family-wise error rate, size=numFeatures */
@@ -131,8 +131,7 @@ public class MarkerSelection {
 	/** Whether to try to trim the number of features to permute */
 	private boolean removeFeatures;
 
-	/** Keeps track of number of permutations performed per feature when
-	* <tt>removeFeatures</tt> is <tt>true</tt> */
+	/** Keeps track of number of permutations performed per feature */
 	private int[] permutationsPerFeature;
 	
 	/** Threshold for removing features when <tt>removeFeatures</tt> is <tt>true</tt> */
@@ -243,7 +242,6 @@ public class MarkerSelection {
 	}
 
 	public static void main(String[] args) {
-		debug = true;
 		try {
 			run(args);
 		} catch (Throwable t) {
@@ -261,7 +259,7 @@ public class MarkerSelection {
 		try {
 			_numPermutations = Integer.parseInt(args[2]);
 		} catch (NumberFormatException nfe) {
-			AnalysisUtil.exit("number of permutations is not an integer");
+			AnalysisUtil.exit("Number of permutations is not an integer.");
 		}
 		int testDirection = Integer.parseInt(args[3]);
 		String outputFileName = args[4];
@@ -273,7 +271,7 @@ public class MarkerSelection {
 		try {
 			seed = Integer.parseInt(args[9]);
 		} catch (NumberFormatException nfe) {
-			AnalysisUtil.exit("random seed is not an integer");
+			AnalysisUtil.exit("Random seed is not an integer.");
 		}
 		boolean removeFeatures = Boolean.valueOf(args[10]).booleanValue();
 		boolean smoothPValues = Boolean.valueOf(args[11]).booleanValue();
@@ -292,7 +290,7 @@ public class MarkerSelection {
 					minStd = Double.parseDouble(value);
 				} catch (NumberFormatException nfe) {
 					AnalysisUtil
-							.exit("minimum standard deviation is not a number");
+							.exit("Minimum standard deviation is not a number.");
 				}
 			} else if (arg.equals("-c")) {
 				confoundingClsFile = value;
@@ -301,7 +299,7 @@ public class MarkerSelection {
 					theta = Double.parseDouble(value);
 				} catch (NumberFormatException nfe) {
 					AnalysisUtil
-							.exit("Theta is not a number");
+							.exit("Theta is not a number.");
 				}
 			}
 		}
@@ -370,7 +368,9 @@ public class MarkerSelection {
 		upperBound = new double[numFeatures];
 		
 		statisticalMeasure.compute(dataArray, classZeroIndices, classOneIndices,
-				scores, null, -1); // index of observed scores, greatest to smallest
+				scores, null, -1); 
+		
+		// index of observed scores, greatest to smallest
 		int[] descendingIndices = Sorting.index(scores, Sorting.DESCENDING);
 		
 		if (covariate != null) {
@@ -399,7 +399,7 @@ public class MarkerSelection {
 			if ((totalPermutations.compareTo(new java.math.BigInteger(""
 					+ Integer.MAX_VALUE))) == 1) {
 				AnalysisUtil.exit("Number of permutations exceeds maximum of "
-						+ Integer.MAX_VALUE);
+						+ Integer.MAX_VALUE + ".");
 			}
 			numPermutations = totalPermutations.intValue();
 		} else if (complete && balanced) {
@@ -412,7 +412,7 @@ public class MarkerSelection {
 			if ((totalPermutations.compareTo(new java.math.BigInteger(""
 					+ Integer.MAX_VALUE))) == 1) {
 				AnalysisUtil.exit("Number of permutations exceeds maximum of "
-						+ Integer.MAX_VALUE);
+						+ Integer.MAX_VALUE + ".");
 			}
 			numPermutations = totalPermutations.intValue();
 		}
@@ -740,7 +740,8 @@ public class MarkerSelection {
 		BigInteger bigIntBank = BigInteger.valueOf(numFeatures).multiply(
 			BigInteger.valueOf(numPermutations));
 		if(bigIntBank.compareTo(maxLong) > 0) {
-			AnalysisUtil.exit("Arithmetic overflow");
+			AnalysisUtil.exit(
+				"Arithmetic overflow. Try decreasing the number of permutations.");
 		}
 		long bank = bigIntBank.longValue();
 		int[] featureIndicesToPermute = null;

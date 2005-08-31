@@ -242,6 +242,7 @@ public class MarkerSelection {
 	}
 
 	public static void main(String[] args) {
+		debug = true;
 		try {
 			run(args);
 		} catch (Throwable t) {
@@ -480,21 +481,16 @@ public class MarkerSelection {
 			featureSpecificPValues[i] = p;
 			
 			if (testDirection == Constants.TWO_SIDED) {
-				k *=2;
-				double shape1 = k + 1;
-				double shape2 = N - k + 1;
-				JSci.maths.statistics.BetaDistribution beta = 
-					new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
-				lowerBound[i] = beta.inverse(0.025);
-				upperBound[i] = beta.inverse(0.975);
-			} else {
-				double shape1 = k + 1;
-				double shape2 = N - k + 1;
-				JSci.maths.statistics.BetaDistribution beta = 
-					new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
-				lowerBound[i] = beta.inverse(0.025);
-				upperBound[i] = beta.inverse(0.975);
+				 k = 2*Math.min(k,N-k); 
 			}
+			
+			double shape1 = k + 1;
+			double shape2 = N - k + 1;
+			JSci.maths.statistics.BetaDistribution beta = 
+				new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
+			lowerBound[i] = beta.inverse(0.025);
+			upperBound[i] = beta.inverse(0.975);
+			
 			
 			if (!removeFeatures) {
 				fwer[i] /= N;

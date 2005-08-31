@@ -16,9 +16,11 @@ import org.genepattern.data.matrix.DoubleMatrix2D;
 import org.genepattern.io.expr.ExpressionDataCreator;
 import org.genepattern.io.expr.IExpressionDataReader;
 import org.genepattern.module.AnalysisUtil;
+import org.genepattern.stats.Function;
 import org.genepattern.stats.ITestStatistic;
 import org.genepattern.stats.Sorting;
 import org.genepattern.stats.TestStatistics;
+import org.genepattern.stats.ZeroFinder;
 import org.genepattern.ioutil.Util;
 
 import edu.mit.broad.marker.permutation.BalancedCompletePermuter;
@@ -480,17 +482,50 @@ public class MarkerSelection {
 			}
 			featureSpecificPValues[i] = p;
 			
+	
 			if (testDirection == Constants.TWO_SIDED) {
 				 k = 2*Math.min(k,N-k); 
 			}
 			
 			double shape1 = k + 1;
 			double shape2 = N - k + 1;
-			JSci.maths.statistics.BetaDistribution beta = 
+			final JSci.maths.statistics.BetaDistribution betaDist = 
 				new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
-			lowerBound[i] = beta.inverse(0.025);
-			upperBound[i] = beta.inverse(0.975);
+			double plow = betaDist.inverse(0.025);
+			double phigh = betaDist.inverse(0.975);
 			
+			Function function = new Function() {
+				public double evaluate(double x) {
+					double d = Math.min(1, 0.95+betaDist.cumulative(x));
+					return  betaDist.probability(x)-
+						betaDist.probability(
+							betaDist.inverse(d));
+				}
+			};
+			
+			if(k==0) {
+				plow = 0;
+				phigh = betaDist.inverse(0.05);
+			} else if(k==N) {
+				plow = betaDist.inverse(0.95);
+				phigh = 1;
+			} else if(k < (N/2)) {
+				double accuracy = Math.min(p/1000, 0.000001);
+				// search between 0 and plow
+				plow = ZeroFinder.bisection(0, plow, accuracy,
+         function);
+				phigh = betaDist.inverse(0.95+betaDist.cumulative(plow));
+			} else if(k > (N/2)) {
+				double accuracy = Math.min(p/1000, 0.000001);
+				 // search between plow and beta.inverse(0.05)
+				plow = ZeroFinder.bisection(plow, betaDist.inverse(0.05), accuracy,
+         function);
+				phigh = betaDist.inverse(0.95+betaDist.cumulative(plow));
+			}
+			
+			
+			lowerBound[i] = plow;
+			upperBound[i] = phigh;
 			
 			if (!removeFeatures) {
 				fwer[i] /= N;

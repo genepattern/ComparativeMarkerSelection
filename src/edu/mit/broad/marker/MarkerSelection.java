@@ -151,7 +151,7 @@ public class MarkerSelection {
 		this.dataset = dataset;
 		this.dataArray = dataset.getArray();
 		this.datasetFile = datasetFile;
-		this.classVector = AnalysisUtil.readClassVector(clsFile);
+		this.classVector = classVector;
 		AnalysisUtil.checkDimensions(dataset, classVector);
 		if (classVector.getClassCount() != 2) {
 			AnalysisUtil.exit("Class file must contain 2 classes.");
@@ -335,7 +335,7 @@ public class MarkerSelection {
 			String baseOutputFileName = Util.getBaseFileName(outputFileName);
 			for(int i = 0; i < classVector.getClassCount(); i++) {
 				String tempOutputFileName = baseOutputFileName + "." + 
-					classVector.getClassName(i) + ".vs.All.odf";
+					classVector.getClassName(i) + ".vs.Rest.odf";
 				new MarkerSelection(dataset, datasetFile, oneVersusAll[i], 
 				clsFile, _numPermutations, testDirection, tempOutputFileName, 
 				balanced, complete, metric, minStd, seed, 

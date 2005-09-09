@@ -173,6 +173,10 @@ public class MarkerSelection {
 		if(complete && removeFeatures) {
 			AnalysisUtil.exit("Speedup option can only be used when performing random permutations.");
 		}
+		if(complete && smoothPValues) {
+			System.out.println("Smooth p-values set to false. Smoothing p-values disabled when performing all possible permutations.");
+			smoothPValues = false;
+		}
 		
 		this.numFeatures = dataset.getRowCount();
 		
@@ -245,6 +249,8 @@ public class MarkerSelection {
 
 	public static void main(String[] args) {
 		debug = true;
+		debugger = new Debugger();
+		
 		try {
 			run(args);
 		} catch (Throwable t) {
@@ -487,45 +493,52 @@ public class MarkerSelection {
 				 k = 2*Math.min(k,N-k); 
 			}
 			
-			double shape1 = k + 1;
-			double shape2 = N - k + 1;
-			final JSci.maths.statistics.BetaDistribution betaDist = 
-				new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
-			double plow = betaDist.inverse(0.025);
-			double phigh = betaDist.inverse(0.975);
-			
-			Function function = new Function() {
-				public double evaluate(double x) {
-					double d = Math.min(1, 0.95+betaDist.cumulative(x));
-					return  betaDist.probability(x)-
-						betaDist.probability(
-							betaDist.inverse(d));
+			if(complete) {
+				lowerBound[i] = p;
+				upperBound[i] = p;
+			} else {
+				double shape1 = k + 1;
+				double shape2 = N - k + 1;
+				final JSci.maths.statistics.BetaDistribution betaDist = 
+					new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
+				double plow = betaDist.inverse(0.025);
+				double phigh = betaDist.inverse(0.975);
+				
+				Function function = new Function() {
+					public double evaluate(double x) {
+						double d = Math.min(1, 0.95+betaDist.cumulative(x));
+						return  betaDist.probability(x)-
+							betaDist.probability(
+								betaDist.inverse(d));
+					}
+				};
+				
+				
+				if(k==0) {
+					plow = 0;
+					phigh = betaDist.inverse(0.05);
+				} else if(k==N) {
+					plow = betaDist.inverse(0.95);
+					phigh = 1;
+				} else if(k < (N/2)) {
+					double accuracy = Math.min(p/1000, 0.000001);
+					// search between 0 and plow
+					plow = ZeroFinder.bisection(0, plow, accuracy,
+				function);
+					phigh = betaDist.inverse(0.95+betaDist.cumulative(plow));
+				} else if(k > (N/2)) {
+					double accuracy = Math.min(p/1000, 0.000001);
+					 // search between plow and beta.inverse(0.05)
+					plow = ZeroFinder.bisection(plow, betaDist.inverse(0.05), accuracy,
+				function);
+					phigh = betaDist.inverse(0.95+betaDist.cumulative(plow));
+				} else {
+					plow = betaDist.inverse(0.025);
+					phigh = betaDist.inverse(0.975);
 				}
-			};
-			
-			if(k==0) {
-				plow = 0;
-				phigh = betaDist.inverse(0.05);
-			} else if(k==N) {
-				plow = betaDist.inverse(0.95);
-				phigh = 1;
-			} else if(k < (N/2)) {
-				double accuracy = Math.min(p/1000, 0.000001);
-				// search between 0 and plow
-				plow = ZeroFinder.bisection(0, plow, accuracy,
-         function);
-				phigh = betaDist.inverse(0.95+betaDist.cumulative(plow));
-			} else if(k > (N/2)) {
-				double accuracy = Math.min(p/1000, 0.000001);
-				 // search between plow and beta.inverse(0.05)
-				plow = ZeroFinder.bisection(plow, betaDist.inverse(0.05), accuracy,
-         function);
-				phigh = betaDist.inverse(0.95+betaDist.cumulative(plow));
+				lowerBound[i] = plow;
+				upperBound[i] = phigh;
 			}
-			
-			
-			lowerBound[i] = plow;
-			upperBound[i] = phigh;
 			
 			if (!removeFeatures) {
 				fwer[i] /= N;
@@ -768,7 +781,7 @@ public class MarkerSelection {
 			}
 		}
 
-		if (debugger != null) {
+		if (debug) {
 			debugger.print();
 		}
 	}
@@ -805,7 +818,7 @@ public class MarkerSelection {
 				permutedAssignments = permuter.next();
 			}
 
-			if (debugger != null) {
+			if (debug) {
 				debugger.addAssignment(permutedAssignments);
 			}
 			java.util.List zeroIndices = new java.util.ArrayList();
@@ -857,15 +870,11 @@ public class MarkerSelection {
 					permutationsPerFeature[index]++;
 					double k = featureSpecificPValues[index];
 					int N = permutationsPerFeature[index];
-					double d = 2*1.96*Math.sqrt((N+1-k)/(N*(k+1)));
-					double d2 = -Double.MAX_VALUE;
-					
 					if(testDirection == Constants.TWO_SIDED) {
-						k = N-k;
-						d2 = 2*1.96*Math.sqrt((N+1-k)/(N*(k+1)));
+						k = 2*Math.min(k, N-k);
 					}
-					
-					if (d >= theta || d2 >= theta) { // include marker
+					double d = 2*1.96*Math.sqrt((N+1-k)/(N*(k+1)));
+					if (d >= theta) { // include marker
 						featureIndicesToPermute[lengthOfIndicesToPermute] = index;
 						lengthOfIndicesToPermute++;
 					} 
@@ -1020,12 +1029,4 @@ public class MarkerSelection {
 			System.out.println(assignment2Occurences);
 		}
 	}
-
-	static {
-		if ("true".equalsIgnoreCase(System
-				.getProperty("edu.mit.broad.marker.debug"))) {
-			debugger = new Debugger();
-		}
-	}
-
 }

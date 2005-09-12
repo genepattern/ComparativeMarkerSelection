@@ -871,9 +871,9 @@ public class MarkerSelection {
 					double k = featureSpecificPValues[index];
 					int N = permutationsPerFeature[index];
 					if(testDirection == Constants.TWO_SIDED) {
-						k = 2*Math.min(k, N-k);
+						k = Math.min(k, N-k);
 					}
-					double d = 2*1.96*Math.sqrt((N+1-k)/(N*(k+1)));
+					double d = 2*1.96*Math.sqrt((N+1-k)/((N+3)*(k+1)));
 					if (d >= theta) { // include marker
 						featureIndicesToPermute[lengthOfIndicesToPermute] = index;
 						lengthOfIndicesToPermute++;

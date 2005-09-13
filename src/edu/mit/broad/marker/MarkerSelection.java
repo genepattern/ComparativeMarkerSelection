@@ -248,8 +248,8 @@ public class MarkerSelection {
 	}
 
 	public static void main(String[] args) {
-		debug = true;
-		debugger = new Debugger();
+	//	debug = true;
+		//debugger = new Debugger();
 		
 		try {
 			run(args);
@@ -445,7 +445,7 @@ public class MarkerSelection {
 		permute();
 		long endTime = System.currentTimeMillis();
 		long elapsed = endTime-startTime;
-		System.out.println("elapsed time " + elapsed/1000.0 + " seconds");
+	//	System.out.println("elapsed time " + elapsed/1000.0 + " seconds");
 			
 		// free temporary storage
 		monotonicPermutedScores = null;

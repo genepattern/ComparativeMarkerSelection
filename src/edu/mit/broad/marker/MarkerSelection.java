@@ -6,22 +6,21 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.StringTokenizer;
-import java.math.BigInteger;
 
 import org.genepattern.data.expr.ExpressionData;
 import org.genepattern.data.matrix.ClassVector;
 import org.genepattern.data.matrix.DoubleMatrix2D;
-import org.genepattern.io.expr.ExpressionDataCreator;
 import org.genepattern.io.expr.IExpressionDataReader;
+import org.genepattern.ioutil.Util;
 import org.genepattern.module.AnalysisUtil;
 import org.genepattern.stats.Function;
 import org.genepattern.stats.ITestStatistic;
 import org.genepattern.stats.Sorting;
 import org.genepattern.stats.TestStatistics;
 import org.genepattern.stats.ZeroFinder;
-import org.genepattern.ioutil.Util;
 
 import edu.mit.broad.marker.permutation.BalancedCompletePermuter;
 import edu.mit.broad.marker.permutation.BalancedRandomPermuter;
@@ -31,10 +30,11 @@ import edu.mit.broad.marker.permutation.UnbalancedRandomCovariatePermuter;
 import edu.mit.broad.marker.permutation.UnbalancedRandomPermuter;
 
 /**
- * @author     Joshua Gould
+ * @author Joshua Gould
  */
 public class MarkerSelection {
 	private static boolean debug;
+
 	private static Debugger debugger;
 
 	/** input expression values */
@@ -42,7 +42,7 @@ public class MarkerSelection {
 
 	/** data array stored in <tt>dataset</tt> */
 	private double[][] dataArray;
-	
+
 	/** input classes */
 	private ClassVector classVector;
 
@@ -88,7 +88,7 @@ public class MarkerSelection {
 
 	/** Input cls file name */
 	private String clsFile;
-	
+
 	/** Input confounding variable cls file name */
 	private String confoundingClsFile;
 
@@ -126,60 +126,65 @@ public class MarkerSelection {
 
 	/** Lower confidence interval for feature p value */
 	private double[] lowerBound;
-	
+
 	/** Upper confidence interval for feature p value */
 	private double[] upperBound;
-	
+
 	/** Whether to try to trim the number of features to permute */
 	private boolean removeFeatures;
 
 	/** Keeps track of number of permutations performed per feature */
 	private int[] permutationsPerFeature;
-	
-	/** Threshold for removing features when <tt>removeFeatures</tt> is <tt>true</tt> */
+
+	/**
+	 * Threshold for removing features when <tt>removeFeatures</tt> is
+	 * <tt>true</tt>
+	 */
 	private double theta = 0.25;
-	
+
 	/** Whether to smooth p values */
 	private boolean smoothPValues;
 
-	public MarkerSelection(DoubleMatrix2D dataset, String datasetFile, 
-			ClassVector classVector, String clsFile,
-			int _numPermutations, int _side, String _outputFileName,
-			boolean _balanced, boolean complete, int metric,
-			double minStd, int seed, ClassVector confoundingClassVector,
-			String confoundingClsFile, boolean removeFeatures, double theta, boolean smoothPValues) {
-		this.dataset = dataset;
-		this.dataArray = dataset.getArray();
-		this.datasetFile = datasetFile;
-		this.classVector = classVector;
-		AnalysisUtil.checkDimensions(dataset, classVector);
-		if (classVector.getClassCount() != 2) {
+	public MarkerSelection(DoubleMatrix2D _dataset, String _datasetFile,
+			ClassVector _classVector, String _clsFile, int _numPermutations,
+			int _side, String _outputFileName, boolean _balanced,
+			boolean _complete, int _metric, double _minStd, int _seed,
+			ClassVector _confoundingClassVector, String _confoundingClsFile,
+			boolean _removeFeatures, double _theta, boolean _smoothPValues) {
+		this.dataset = _dataset;
+		this.dataArray = _dataset.getArray();
+		this.datasetFile = _datasetFile;
+		this.classVector = _classVector;
+		AnalysisUtil.checkDimensions(_dataset, _classVector);
+		if (_classVector.getClassCount() != 2) {
 			AnalysisUtil.exit("Class file must contain 2 classes.");
 		}
-		this.clsFile = clsFile;
+		this.clsFile = _clsFile;
 		this.numPermutations = _numPermutations;
 		this.testDirection = _side;
 		this.outputFileName = _outputFileName;
 		this.balanced = _balanced;
-		this.complete = complete;
-		this.metric = metric;
-		this.minStd = minStd;
-		this.seed = seed;
-		this.covariate = confoundingClassVector;
-		this.confoundingClsFile = confoundingClsFile;
-		this.removeFeatures = removeFeatures;
-		this.theta = theta;
-		this.smoothPValues = smoothPValues;
-		if(complete && removeFeatures) {
-			AnalysisUtil.exit("Speedup option can only be used when performing random permutations.");
+		this.complete = _complete;
+		this.metric = _metric;
+		this.minStd = _minStd;
+		this.seed = _seed;
+		this.covariate = _confoundingClassVector;
+		this.confoundingClsFile = _confoundingClsFile;
+		this.removeFeatures = _removeFeatures;
+		this.theta = _theta;
+		this.smoothPValues = _smoothPValues;
+		if (_complete && _removeFeatures) {
+			AnalysisUtil
+					.exit("Speedup option can only be used when performing random permutations.");
 		}
-		if(complete && smoothPValues) {
-			System.out.println("Smooth p-values set to false. Smoothing p-values disabled when performing all possible permutations.");
+		if (_complete && _smoothPValues) {
+			System.out
+					.println("Smooth p-values set to false. Smoothing p-values disabled when performing all possible permutations.");
 			this.smoothPValues = false;
 		}
-		
-		this.numFeatures = dataset.getRowCount();
-		
+
+		this.numFeatures = _dataset.getRowCount();
+
 		String permutationsFile = System
 				.getProperty("edu.mit.broad.marker.perm");
 		if (permutationsFile != null) {
@@ -198,18 +203,18 @@ public class MarkerSelection {
 						.exit("Minimum standard deviation must be greater than zero.");
 			}
 			statisticalMeasure = new TestStatistics.TTestMinStd(minStd);
-		}  else if (metric == Constants.T_TEST_MEDIAN_MIN_STD) {
+		} else if (metric == Constants.T_TEST_MEDIAN_MIN_STD) {
 			if (minStd <= 0) {
 				AnalysisUtil
 						.exit("Minimum standard deviation must be greater than zero.");
 			}
 			statisticalMeasure = new TestStatistics.TTestMedianMinStd(minStd);
-					
+
 		} else if (metric == Constants.SNR) {
 			statisticalMeasure = new TestStatistics.SNR();
 		} else if (metric == Constants.SNR_MEDIAN) {
 			statisticalMeasure = new TestStatistics.SNRMedian();
-		
+
 		} else if (metric == Constants.SNR_MIN_STD) {
 			if (minStd <= 0) {
 				AnalysisUtil
@@ -222,7 +227,7 @@ public class MarkerSelection {
 						.exit("Minimum standard deviation must be greater than zero.");
 			}
 			statisticalMeasure = new TestStatistics.SNRMedianMinStd(minStd);
-			
+
 		} else {
 			AnalysisUtil.exit("Unknown test statistic");
 		}
@@ -248,13 +253,13 @@ public class MarkerSelection {
 	}
 
 	public static void main(String[] args) {
-	//	debug = true;
-		//debugger = new Debugger();
-		
+		// debug = true;
+		// debugger = new Debugger();
+
 		try {
 			run(args);
 		} catch (Throwable t) {
-			if(debug) {
+			if (debug) {
 				t.printStackTrace();
 			}
 			AnalysisUtil.exit("An error occurred while running the algorithm.");
@@ -274,7 +279,7 @@ public class MarkerSelection {
 		String outputFileName = args[4];
 		boolean balanced = Boolean.valueOf(args[5]).booleanValue();
 		boolean complete = Boolean.valueOf(args[6]).booleanValue();
-		boolean fixStdev = Boolean.valueOf(args[7]).booleanValue();
+		boolean fixStdev = Boolean.valueOf(args[7]).booleanValue(); // ignored
 		int metric = Integer.parseInt(args[8]);
 		int seed = 0;
 		try {
@@ -284,7 +289,7 @@ public class MarkerSelection {
 		}
 		boolean removeFeatures = Boolean.valueOf(args[10]).booleanValue();
 		boolean smoothPValues = Boolean.valueOf(args[11]).booleanValue();
-		
+
 		double minStd = -1;
 		String confoundingClsFile = null;
 		double theta = -1;
@@ -303,12 +308,11 @@ public class MarkerSelection {
 				}
 			} else if (arg.equals("-c")) {
 				confoundingClsFile = value;
-			} else if(arg.equals("-t")) {
+			} else if (arg.equals("-t")) {
 				try {
 					theta = Double.parseDouble(value);
 				} catch (NumberFormatException nfe) {
-					AnalysisUtil
-							.exit("Theta is not a number.");
+					AnalysisUtil.exit("Theta is not a number.");
 				}
 			}
 		}
@@ -316,42 +320,41 @@ public class MarkerSelection {
 		ClassVector classVector = AnalysisUtil.readClassVector(clsFile);
 		IExpressionDataReader reader = AnalysisUtil
 				.getExpressionReader(datasetFile);
-		ExpressionData expressionData = AnalysisUtil
-				.readExpressionData(reader, datasetFile);
+		ExpressionData expressionData = AnalysisUtil.readExpressionData(reader,
+				datasetFile);
 
 		DoubleMatrix2D dataset = expressionData.getExpressionMatrix();
-		
+
 		ClassVector confoundingClassVector = null;
 		if (confoundingClsFile != null) {
-			confoundingClassVector = AnalysisUtil.readClassVector(confoundingClsFile);
-			/*  ClassVector[] cv = new edu.mit.broad.internal.MultiClassReader().read(clsFile, expressionData);
-			 this.classVector = cv[0];
-			 if(cv.length > 1) {
-			 covariate = cv[1];
-			 for(int i = 2; i < cv.length; i++) {
-			 covariate = covariate.union(cv[i]);
-			 }
-			 }
+			confoundingClassVector = AnalysisUtil
+					.readClassVector(confoundingClsFile);
+			/*
+			 * ClassVector[] cv = new
+			 * edu.mit.broad.internal.MultiClassReader().read(clsFile,
+			 * expressionData); this.classVector = cv[0]; if(cv.length > 1) {
+			 * covariate = cv[1]; for(int i = 2; i < cv.length; i++) { covariate =
+			 * covariate.union(cv[i]); } }
 			 */
 		}
 
-
-		if(classVector.getClassCount() > 2) {
+		if (classVector.getClassCount() > 2) {
 			ClassVector[] oneVersusAll = classVector.getOneVersusAll();
 			String baseOutputFileName = Util.getBaseFileName(outputFileName);
-			for(int i = 0; i < classVector.getClassCount(); i++) {
-				String tempOutputFileName = baseOutputFileName + "." + 
-					classVector.getClassName(i) + ".vs.Rest.odf";
-				new MarkerSelection(dataset, datasetFile, oneVersusAll[i], 
-				clsFile, _numPermutations, testDirection, tempOutputFileName, 
-				balanced, complete, metric, minStd, seed, 
-				confoundingClassVector, confoundingClsFile, removeFeatures, theta, smoothPValues);
+			for (int i = 0; i < classVector.getClassCount(); i++) {
+				String tempOutputFileName = baseOutputFileName + "."
+						+ classVector.getClassName(i) + ".vs.Rest.odf";
+				new MarkerSelection(dataset, datasetFile, oneVersusAll[i],
+						clsFile, _numPermutations, testDirection,
+						tempOutputFileName, balanced, complete, metric, minStd,
+						seed, confoundingClassVector, confoundingClsFile,
+						removeFeatures, theta, smoothPValues);
 			}
 		} else {
 			new MarkerSelection(dataset, datasetFile, classVector, clsFile,
-				_numPermutations, testDirection, outputFileName, balanced, 
-				complete, metric, minStd, seed, 
-				confoundingClassVector, confoundingClsFile, removeFeatures, theta, smoothPValues);
+					_numPermutations, testDirection, outputFileName, balanced,
+					complete, metric, minStd, seed, confoundingClassVector,
+					confoundingClsFile, removeFeatures, theta, smoothPValues);
 		}
 	}
 
@@ -375,13 +378,13 @@ public class MarkerSelection {
 		scores = new double[numFeatures];
 		lowerBound = new double[numFeatures];
 		upperBound = new double[numFeatures];
-		
-		statisticalMeasure.compute(dataArray, classZeroIndices, classOneIndices,
-				scores, null, -1); 
-		
+
+		statisticalMeasure.compute(dataArray, classZeroIndices,
+				classOneIndices, scores, null, -1);
+
 		// index of observed scores, greatest to smallest
 		int[] descendingIndices = Sorting.index(scores, Sorting.DESCENDING);
-		
+
 		if (covariate != null) {
 			seedUsed = true;
 			permuter = new UnbalancedRandomCovariatePermuter(classVector,
@@ -430,28 +433,28 @@ public class MarkerSelection {
 		permutedScores = new double[numFeatures];
 		absoluteScores = (double[]) scores.clone();
 		for (int i = 0; i < numFeatures; i++) {
-				absoluteScores[i] = Math.abs(absoluteScores[i]);
+			absoluteScores[i] = Math.abs(absoluteScores[i]);
 		}
 		descendingAbsIndices = Sorting
-					.index(absoluteScores, Sorting.DESCENDING);
-					
+				.index(absoluteScores, Sorting.DESCENDING);
+
 		if (!removeFeatures) {
 			monotonicPermutedScores = new double[numFeatures];
 			maxT = new double[numFeatures];
 			fwer = new double[numFeatures];
 		}
-			
-		long startTime = System.currentTimeMillis();
+
+		//long startTime = System.currentTimeMillis();
 		permute();
-		long endTime = System.currentTimeMillis();
-		long elapsed = endTime-startTime;
-	//	System.out.println("elapsed time " + elapsed/1000.0 + " seconds");
-			
+		//long endTime = System.currentTimeMillis();
+		//long elapsed = endTime - startTime;
+		// System.out.println("elapsed time " + elapsed/1000.0 + " seconds");
+
 		// free temporary storage
 		monotonicPermutedScores = null;
 		absoluteScores = null;
-		permutedScores = null; 
-		
+		permutedScores = null;
+
 		for (int i = 0; i < numFeatures; i++) {
 			// fpr[i] /= numFeatures;
 			// fpr[i] /= numPermutations;
@@ -459,79 +462,77 @@ public class MarkerSelection {
 			double k = featureSpecificPValues[i];
 			double p;
 			if (smoothPValues) {
-				p = (k + 1)/(N + 2);
+				p = (k + 1) / (N + 2);
 			} else {
-				p = k/N;
+				p = k / N;
 			}
 			if (testDirection == Constants.TWO_SIDED) {
 				double oneMinusP = 1.0 - p;
-				if(oneMinusP < p) {
-					 p = oneMinusP;
+				if (oneMinusP < p) {
+					p = oneMinusP;
 				}
 				p *= 2;
-				
-				if(p==0) {
-					// ensure not degenerate case where profile is completely flat
-					// TODO handle cases where profile is flat (but not completely)
+
+				if (p == 0) {
+					// ensure not degenerate case where profile is completely
+					// flat
+					// TODO handle cases where profile is flat (but not
+					// completely)
 					double[] row = dataArray[i];
 					double val = row[0];
 					boolean flat = true;
-					for(int j = 1, cols = row.length; j < cols && flat; j++) {
-						if(row[j]!=val) {
+					for (int j = 1, cols = row.length; j < cols && flat; j++) {
+						if (row[j] != val) {
 							flat = false;
 						}
 					}
-					if(flat) {
+					if (flat) {
 						p = 1;
 					}
-				} 
+				}
 			}
 			featureSpecificPValues[i] = p;
-			
-	
+
 			if (testDirection == Constants.TWO_SIDED) {
-				 k = 2*Math.min(k,N-k); 
+				k = 2 * Math.min(k, N - k);
 			}
-			
-			if(complete) {
+
+			if (complete) {
 				lowerBound[i] = p;
 				upperBound[i] = p;
 			} else {
 				double shape1 = k + 1;
 				double shape2 = N - k + 1;
-				final JSci.maths.statistics.BetaDistribution betaDist = 
-					new JSci.maths.statistics.BetaDistribution(shape1, shape2); 
+				final JSci.maths.statistics.BetaDistribution betaDist = new JSci.maths.statistics.BetaDistribution(
+						shape1, shape2);
 				double plow = betaDist.inverse(0.025);
 				double phigh = betaDist.inverse(0.975);
-				
+
 				Function function = new Function() {
 					public double evaluate(double x) {
-						double d = Math.min(1, 0.95+betaDist.cumulative(x));
-						return  betaDist.probability(x)-
-							betaDist.probability(
-								betaDist.inverse(d));
+						double d = Math.min(1, 0.95 + betaDist.cumulative(x));
+						return betaDist.probability(x)
+								- betaDist.probability(betaDist.inverse(d));
 					}
 				};
-				
-				
-				if(k==0) {
+
+				if (k == 0) {
 					plow = 0;
 					phigh = betaDist.inverse(0.05);
-				} else if(k==N) {
+				} else if (k == N) {
 					plow = betaDist.inverse(0.95);
 					phigh = 1;
-				} else if(k < (N/2)) {
-					double accuracy = Math.min(p/1000, 0.000001);
+				} else if (k < (N / 2)) {
+					double accuracy = Math.min(p / 1000, 0.000001);
 					// search between 0 and plow
-					plow = ZeroFinder.bisection(0, plow, accuracy,
-				function);
-					phigh = betaDist.inverse(0.95+betaDist.cumulative(plow));
-				} else if(k > (N/2)) {
-					double accuracy = Math.min(p/1000, 0.000001);
-					 // search between plow and beta.inverse(0.05)
-					plow = ZeroFinder.bisection(plow, betaDist.inverse(0.05), accuracy,
-				function);
-					phigh = betaDist.inverse(0.95+betaDist.cumulative(plow));
+					plow = ZeroFinder.bisection(0, plow, accuracy, function);
+					phigh = betaDist.inverse(0.95 + betaDist.cumulative(plow));
+				} else if (k > (N / 2)) {
+					double accuracy = Math.min(p / 1000, 0.000001);
+					// search between plow and beta.inverse(0.05)
+					plow = ZeroFinder.bisection(plow, betaDist.inverse(0.05),
+							accuracy, function);
+					phigh = betaDist.inverse(0.95 + betaDist.cumulative(plow));
 				} else {
 					plow = betaDist.inverse(0.025);
 					phigh = betaDist.inverse(0.975);
@@ -539,14 +540,13 @@ public class MarkerSelection {
 				lowerBound[i] = plow;
 				upperBound[i] = phigh;
 			}
-			
+
 			if (!removeFeatures) {
 				fwer[i] /= N;
 				// rankBasedPValues[i] /= N;
 				maxT[i] /= N;
 			}
 		}
-		
 
 		double[] fdr = new double[numFeatures];
 		int[] pValueIndices = Sorting.index(featureSpecificPValues,
@@ -608,11 +608,11 @@ public class MarkerSelection {
 						.println(featureSpecificPValues[descendingIndices[i]]);
 			}
 		} catch (IOException ioe) {
-			if(debug) {
+			if (debug) {
 				ioe.printStackTrace();
 			}
-			AnalysisUtil.exit(
-					"An error occurred while saving the output file.");
+			AnalysisUtil
+					.exit("An error occurred while saving the output file.");
 		} finally {
 			if (tempFileWriter != null) {
 				tempFileWriter.close();
@@ -624,9 +624,10 @@ public class MarkerSelection {
 		int qvalueHeaderLines = 4;
 		String[] qvalueHeaders = new String[qvalueHeaderLines];
 		BufferedReader br = null;
-		String qvalueOutputFileName = "qvalues.txt"; // produced by R code above
+		String qvalueOutputFileName = "qvalues.txt"; // produced by R code
+														// above
 		new File(qvalueOutputFileName).deleteOnExit();
-		
+
 		try {// read in results from qvalue
 			br = new BufferedReader(new FileReader(qvalueOutputFileName));
 			for (int i = 0; i < qvalueHeaderLines; i++) {
@@ -636,12 +637,12 @@ public class MarkerSelection {
 				qvalues[i] = br.readLine();
 			}
 		} catch (IOException ioe) {
-			if(debug) {
+			if (debug) {
 				ioe.printStackTrace();
 			}
-			if(!debug) {
-				AnalysisUtil.exit(
-					"An error occurred while saving the output file.");
+			if (!debug) {
+				AnalysisUtil
+						.exit("An error occurred while saving the output file.");
 			}
 		} finally {
 			if (br != null) {
@@ -661,24 +662,28 @@ public class MarkerSelection {
 			pw = new PrintWriter(new FileWriter(outputFileName));
 			pw.println("ODF 1.0");
 			int numHeaderLines = 18;
-			if(seedUsed) {
+			if (seedUsed) {
 				numHeaderLines++;
 			}
-			if(covariate!=null) {
+			if (covariate != null) {
 				numHeaderLines++;
 			}
-			
+
 			pw.println("HeaderLines=" + numHeaderLines);
 			String[] columnNames = null;
-			if(!removeFeatures) {
-					columnNames = new String[]{"Rank", "Feature", "Score", "Feature P", "Feature P Low", "Feature P High", "FWER", "FDR(BH)", "Bonferroni", "Q Value", "maxT"};
-			
+			if (!removeFeatures) {
+				columnNames = new String[] { "Rank", "Feature", "Score",
+						"Feature P", "Feature P Low", "Feature P High", "FWER",
+						"FDR(BH)", "Bonferroni", "Q Value", "maxT" };
+
 			} else {
-				columnNames = new String[]{"Rank", "Feature", "Score", "Feature P", "Feature P Low", "Feature P High", "FDR(BH)", "Bonferroni", "Q Value", "Permutations"};
+				columnNames = new String[] { "Rank", "Feature", "Score",
+						"Feature P", "Feature P Low", "Feature P High",
+						"FDR(BH)", "Bonferroni", "Q Value", "Permutations" };
 			}
 			pw.print("COLUMN_NAMES:");
-			for(int j = 0; j < columnNames.length; j++) {
-				if(j > 0) {
+			for (int j = 0; j < columnNames.length; j++) {
+				if (j > 0) {
 					pw.print("\t");
 				}
 				pw.print(columnNames[j]);
@@ -687,11 +692,11 @@ public class MarkerSelection {
 			pw.println("Model=Comparative Marker Selection");
 			pw.println("Dataset File=" + AnalysisUtil.getFileName(datasetFile));
 			pw.println("Class File=" + AnalysisUtil.getFileName(clsFile));
-			if(covariate!=null) {
-				pw.println("Confounding Class File=" + 
-					AnalysisUtil.getFileName(confoundingClsFile));
+			if (covariate != null) {
+				pw.println("Confounding Class File="
+						+ AnalysisUtil.getFileName(confoundingClsFile));
 			}
-			if(!removeFeatures) {
+			if (!removeFeatures) {
 				pw.println("Permutations=" + numPermutations);
 			}
 			pw.println("Balanced=" + balanced);
@@ -706,21 +711,21 @@ public class MarkerSelection {
 			pw.println("Class 0=" + classVector.getClassName(0));
 			pw.println("Class 1=" + classVector.getClassName(1));
 			pw.println("Test Statistic=" + statisticalMeasure.toString());
-			
+
 			for (int i = 0; i < qvalueHeaderLines; i++) {
 				pw.println(qvalueHeaders[i]);
 			}
 			if (seedUsed) {
 				pw.println("Random Seed=" + seed);
 			}
-			
+
 			pw.println("Remove Features=" + removeFeatures);
-			if(removeFeatures) {
+			if (removeFeatures) {
 				pw.println("Theta=" + theta);
 			}
 			pw.println("Smooth p-values=" + smoothPValues);
 			pw.println("DataLines=" + numFeatures);
-	
+
 			for (int i = 0; i < numFeatures; i++) {
 				int index = descendingIndices[i];
 
@@ -728,8 +733,8 @@ public class MarkerSelection {
 				if (testDirection == Constants.CLASS_ZERO_LESS_THAN_CLASS_ONE) {
 					rank = numFeatures - rank + 1;
 				}
-				double bonferroni = Math.min(featureSpecificPValues[index] * numFeatures,
-						1.0);
+				double bonferroni = Math.min(featureSpecificPValues[index]
+						* numFeatures, 1.0);
 				pw.print(rank);
 				pw.print("\t");
 				pw.print(dataset.getRowName(index));
@@ -742,22 +747,22 @@ public class MarkerSelection {
 				pw.print("\t");
 				pw.print(upperBound[index]);
 				pw.print("\t");
-				
-				if(!removeFeatures) {
+
+				if (!removeFeatures) {
 					pw.print(fwer[index]);
 					pw.print("\t");
-				} 
-				
+				}
+
 				pw.print(fdr[index]);
 				pw.print("\t");
 				pw.print(bonferroni);
 				pw.print("\t");
 				pw.print(qvalues[i]);
-				if(!removeFeatures) {
+				if (!removeFeatures) {
 					pw.print("\t");
 					pw.print(maxT[index]);
-				} 
-				if(removeFeatures) {
+				}
+				if (removeFeatures) {
 					pw.print("\t");
 					pw.print(permutationsPerFeature[index]);
 				}
@@ -765,11 +770,11 @@ public class MarkerSelection {
 			}
 
 		} catch (Exception e) {
-			if(debug) {
+			if (debug) {
 				e.printStackTrace();
 			}
-			AnalysisUtil.exit(
-					"An error occurred while saving the output file.");
+			AnalysisUtil
+					.exit("An error occurred while saving the output file.");
 		} finally {
 
 			if (pw != null) {
@@ -789,26 +794,26 @@ public class MarkerSelection {
 	private final void permute() {
 		BigInteger maxLong = BigInteger.valueOf(Long.MAX_VALUE);
 		BigInteger bigIntBank = BigInteger.valueOf(numFeatures).multiply(
-			BigInteger.valueOf(numPermutations));
-		if(bigIntBank.compareTo(maxLong) > 0) {
-			AnalysisUtil.exit(
-				"Arithmetic overflow. Try decreasing the number of permutations.");
+				BigInteger.valueOf(numPermutations));
+		if (bigIntBank.compareTo(maxLong) > 0) {
+			AnalysisUtil
+					.exit("Arithmetic overflow. Try decreasing the number of permutations.");
 		}
 		long bank = bigIntBank.longValue();
 		int[] featureIndicesToPermute = null;
 		permutationsPerFeature = new int[numFeatures];
-		if(removeFeatures) {
+		if (removeFeatures) {
 			featureIndicesToPermute = new int[numFeatures];
-			for(int i = 0; i < numFeatures; i++) {
+			for (int i = 0; i < numFeatures; i++) {
 				featureIndicesToPermute[i] = i;
 			}
 		} else {
 			Arrays.fill(permutationsPerFeature, numPermutations);
 		}
-	
+
 		int lengthOfIndicesToPermute = numFeatures;
-		
-		while(bank > 0) {
+
+		while (bank > 0) {
 			int[] permutedClassZeroIndices = null;
 			int[] permutedClassOneIndices = null;
 			int[] permutedAssignments = null;
@@ -843,17 +848,24 @@ public class MarkerSelection {
 			}
 
 			statisticalMeasure.compute(dataArray, permutedClassZeroIndices,
-					permutedClassOneIndices, permutedScores, featureIndicesToPermute, 
-					lengthOfIndicesToPermute);// compute scores using permuted class labels
-			
-			int length = featureIndicesToPermute!=null?lengthOfIndicesToPermute:numFeatures;
+					permutedClassOneIndices, permutedScores,
+					featureIndicesToPermute, lengthOfIndicesToPermute);// compute
+																		// scores
+																		// using
+																		// permuted
+																		// class
+																		// labels
+
+			int length = featureIndicesToPermute != null ? lengthOfIndicesToPermute
+					: numFeatures;
 			lengthOfIndicesToPermute = 0;
-			if(length==0) {
+			if (length == 0) {
 				bank = 0;
 			}
 			for (int i = 0; i < length && bank > 0; i++) {
 				bank--;
-				int index = featureIndicesToPermute!=null?featureIndicesToPermute[i]:i;
+				int index = featureIndicesToPermute != null ? featureIndicesToPermute[i]
+						: i;
 				double score = scores[index];
 				if (testDirection == Constants.TWO_SIDED
 						|| testDirection == Constants.CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
@@ -865,49 +877,38 @@ public class MarkerSelection {
 						featureSpecificPValues[index] += 1.0;
 					}
 				}
-				
-				if(removeFeatures) {
+
+				if (removeFeatures) {
 					permutationsPerFeature[index]++;
 					double k = featureSpecificPValues[index];
 					int N = permutationsPerFeature[index];
-					if(testDirection == Constants.TWO_SIDED) {
-						k = Math.min(k, N-k);
+					if (testDirection == Constants.TWO_SIDED) {
+						k = Math.min(k, N - k);
 					}
-					double d = 2*1.96*Math.sqrt((N+1-k)/((N+3)*(k+1)));
+					double d = 2 * 1.96 * Math.sqrt((N + 1 - k)
+							/ ((N + 3) * (k + 1)));
 					if (d >= theta) { // include marker
 						featureIndicesToPermute[lengthOfIndicesToPermute] = index;
 						lengthOfIndicesToPermute++;
-					} 
-					
+					}
+
 				}
 			}
-			
-			
-			/*Sorting.sort(permutedScores, Sorting.DESCENDING);
 
-			 for(int i = 0; i < numFeatures; i++) {
-			 double score = scores[descendingIndices[i]];
-
-			 if(testDirection == TWO_SIDED) {
-			 if(score >= 0) {
-			 if(permutedScores[i] >= score) {
-			 rankBasedPValues[i] += 1.0;
-			 }
-			 } else {
-			 if(permutedScores[i] <= score) {
-			 rankBasedPValues[i] += 1.0;
-			 }
-			 }
-			 } else if(testDirection == CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
-			 if(permutedScores[i] >= score) {
-			 rankBasedPValues[i] += 1.0;
-			 }
-			 } else {
-			 if(permutedScores[i] <= score) {
-			 rankBasedPValues[i] += 1.0;
-			 }
-			 }
-			 }*/
+			/*
+			 * Sorting.sort(permutedScores, Sorting.DESCENDING);
+			 * 
+			 * for(int i = 0; i < numFeatures; i++) { double score =
+			 * scores[descendingIndices[i]];
+			 * 
+			 * if(testDirection == TWO_SIDED) { if(score >= 0) {
+			 * if(permutedScores[i] >= score) { rankBasedPValues[i] += 1.0; } }
+			 * else { if(permutedScores[i] <= score) { rankBasedPValues[i] +=
+			 * 1.0; } } } else if(testDirection ==
+			 * CLASS_ZERO_GREATER_THAN_CLASS_ONE) { if(permutedScores[i] >=
+			 * score) { rankBasedPValues[i] += 1.0; } } else {
+			 * if(permutedScores[i] <= score) { rankBasedPValues[i] += 1.0; } } }
+			 */
 
 			if (!removeFeatures) {
 				for (int i = 0; i < numFeatures; i++) {
@@ -916,10 +917,10 @@ public class MarkerSelection {
 				}
 
 				for (int i = numFeatures - 2; i >= 0; i--) { // make permuted
-																// scores
-																// monotonicically
-																// non-decreasing
-																// for maxT
+					// scores
+					// monotonicically
+					// non-decreasing
+					// for maxT
 					int index = descendingAbsIndices[i];
 					int indexPlusOne = descendingAbsIndices[i + 1];
 
@@ -957,9 +958,9 @@ public class MarkerSelection {
 	}
 
 	/**
-	 *  Reads the next permutation from a file
-	 *
-	 * @return    the next permutation
+	 * Reads the next permutation from a file
+	 * 
+	 * @return the next permutation
 	 */
 	final int[] nextPermutation() {
 		try {
@@ -984,9 +985,10 @@ public class MarkerSelection {
 	}
 
 	/**
-	 *  Opens the permutations file for reading
-	 *
-	 * @param  fileName  the file name
+	 * Opens the permutations file for reading
+	 * 
+	 * @param fileName
+	 *            the file name
 	 */
 	void initFile(String fileName) {
 

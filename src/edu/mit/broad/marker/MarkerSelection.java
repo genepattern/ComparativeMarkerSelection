@@ -175,7 +175,7 @@ public class MarkerSelection {
 		}
 		if(complete && smoothPValues) {
 			System.out.println("Smooth p-values set to false. Smoothing p-values disabled when performing all possible permutations.");
-			smoothPValues = false;
+			this.smoothPValues = false;
 		}
 		
 		this.numFeatures = dataset.getRowCount();

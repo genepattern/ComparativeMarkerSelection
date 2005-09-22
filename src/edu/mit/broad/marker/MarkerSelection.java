@@ -131,7 +131,7 @@ public class MarkerSelection {
 	private double[] upperBound;
 
 	/** Whether to try to trim the number of features to permute */
-	private boolean removeFeatures;
+	private boolean significanceBooster;
 
 	/** Keeps track of number of permutations performed per feature */
 	private int[] permutationsPerFeature;
@@ -145,6 +145,16 @@ public class MarkerSelection {
 	/** Whether to smooth p values */
 	private boolean smoothPValues;
 
+	private long[] runningTimePerFeature;
+
+	private long elapsedTime;
+	
+	private long gamma = 0;
+
+	private int[] featureIndicesToPermute;
+
+	private int lengthOfIndicesToPermute;
+	
 	public MarkerSelection(DoubleMatrix2D _dataset, String _datasetFile,
 			ClassVector _classVector, String _clsFile, int _numPermutations,
 			int _side, String _outputFileName, boolean _balanced,
@@ -170,7 +180,7 @@ public class MarkerSelection {
 		this.seed = _seed;
 		this.covariate = _confoundingClassVector;
 		this.confoundingClsFile = _confoundingClsFile;
-		this.removeFeatures = _removeFeatures;
+		this.significanceBooster = _removeFeatures;
 		this.theta = _theta;
 		this.smoothPValues = _smoothPValues;
 		if (_complete && _removeFeatures) {
@@ -181,6 +191,11 @@ public class MarkerSelection {
 			System.out
 					.println("Smooth p-values set to false. Smoothing p-values disabled when performing all possible permutations.");
 			this.smoothPValues = false;
+		}
+		if(significanceBooster && !smoothPValues) {
+			System.out
+			.println("Smooth p-values set to true when using significance booster.");
+			this.smoothPValues = true;
 		}
 
 		this.numFeatures = _dataset.getRowCount();
@@ -438,18 +453,14 @@ public class MarkerSelection {
 		descendingAbsIndices = Sorting
 				.index(absoluteScores, Sorting.DESCENDING);
 
-		if (!removeFeatures) {
+		if (!significanceBooster) {
 			monotonicPermutedScores = new double[numFeatures];
 			maxT = new double[numFeatures];
 			fwer = new double[numFeatures];
 		}
 
-		//long startTime = System.currentTimeMillis();
 		permute();
-		//long endTime = System.currentTimeMillis();
-		//long elapsed = endTime - startTime;
-		// System.out.println("elapsed time " + elapsed/1000.0 + " seconds");
-
+		
 		// free temporary storage
 		monotonicPermutedScores = null;
 		absoluteScores = null;
@@ -541,7 +552,7 @@ public class MarkerSelection {
 				upperBound[i] = phigh;
 			}
 
-			if (!removeFeatures) {
+			if (!significanceBooster) {
 				fwer[i] /= N;
 				// rankBasedPValues[i] /= N;
 				maxT[i] /= N;
@@ -581,7 +592,7 @@ public class MarkerSelection {
 			fdr[i] = Math.min(fdr[i], 1);
 		}
 
-		if (!removeFeatures) {
+		if (!significanceBooster) {
 			for (int i = 1; i < numFeatures; i++) { // ensure maxT is monotonic
 				maxT[descendingAbsIndices[i]] = Math.max(
 						maxT[descendingAbsIndices[i]],
@@ -659,8 +670,11 @@ public class MarkerSelection {
 			if (!outputFileName.toLowerCase().endsWith(".odf")) {
 				outputFileName += ".odf";
 			}
+			
 			pw = new PrintWriter(new FileWriter(outputFileName));
 			pw.println("ODF 1.0");
+			pw.println("# Elapsed Time=" + elapsedTime); // FIXME
+			
 			int numHeaderLines = 18;
 			if (seedUsed) {
 				numHeaderLines++;
@@ -668,18 +682,21 @@ public class MarkerSelection {
 			if (covariate != null) {
 				numHeaderLines++;
 			}
+			if(significanceBooster) {
+				numHeaderLines+=2; // theta, gamma
+			}
 
 			pw.println("HeaderLines=" + numHeaderLines);
 			String[] columnNames = null;
-			if (!removeFeatures) {
+			if (!significanceBooster) {
 				columnNames = new String[] { "Rank", "Feature", "Score",
 						"Feature P", "Feature P Low", "Feature P High", "FWER",
-						"FDR(BH)", "Bonferroni", "Q Value", "maxT" };
+						"FDR(BH)", "Bonferroni", "Q Value", "maxT", "Time" }; // FIXME
 
 			} else {
 				columnNames = new String[] { "Rank", "Feature", "Score",
 						"Feature P", "Feature P Low", "Feature P High",
-						"FDR(BH)", "Bonferroni", "Q Value", "Permutations" };
+						"FDR(BH)", "Bonferroni", "Q Value", "Permutations", "Active", "Time" }; // FIXME
 			}
 			pw.print("COLUMN_NAMES:");
 			for (int j = 0; j < columnNames.length; j++) {
@@ -696,9 +713,9 @@ public class MarkerSelection {
 				pw.println("Confounding Class File="
 						+ AnalysisUtil.getFileName(confoundingClsFile));
 			}
-			if (!removeFeatures) {
-				pw.println("Permutations=" + numPermutations);
-			}
+		
+			pw.println("Permutations=" + numPermutations);
+			
 			pw.println("Balanced=" + balanced);
 			pw.println("Complete=" + complete);
 			if (testDirection == Constants.CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
@@ -719,9 +736,15 @@ public class MarkerSelection {
 				pw.println("Random Seed=" + seed);
 			}
 
-			pw.println("Remove Features=" + removeFeatures);
-			if (removeFeatures) {
+			pw.println("Significance Booster=" + significanceBooster);
+			boolean[] active = null;
+			if (significanceBooster) {
 				pw.println("Theta=" + theta);
+				pw.println("Gamma=" + gamma);
+				active = new boolean[numFeatures];
+				for(int i = 0; i < lengthOfIndicesToPermute; i++) {
+					active[featureIndicesToPermute[i]] = true;
+				}
 			}
 			pw.println("Smooth p-values=" + smoothPValues);
 			pw.println("DataLines=" + numFeatures);
@@ -748,7 +771,7 @@ public class MarkerSelection {
 				pw.print(upperBound[index]);
 				pw.print("\t");
 
-				if (!removeFeatures) {
+				if (!significanceBooster) {
 					pw.print(fwer[index]);
 					pw.print("\t");
 				}
@@ -758,14 +781,17 @@ public class MarkerSelection {
 				pw.print(bonferroni);
 				pw.print("\t");
 				pw.print(qvalues[i]);
-				if (!removeFeatures) {
+				if (!significanceBooster) {
 					pw.print("\t");
 					pw.print(maxT[index]);
 				}
-				if (removeFeatures) {
+				if (significanceBooster) {
 					pw.print("\t");
 					pw.print(permutationsPerFeature[index]);
+					pw.print("\t");
+					pw.print(active[index]?"1":"0");
 				}
+				pw.print("\t" + runningTimePerFeature[index]); // FIXME
 				pw.println();
 			}
 
@@ -793,16 +819,16 @@ public class MarkerSelection {
 
 	private final void permute() {
 		BigInteger maxLong = BigInteger.valueOf(Long.MAX_VALUE);
-		BigInteger bigIntBank = BigInteger.valueOf(numFeatures).multiply(
+		BigInteger bigIntBank = BigInteger.valueOf(numFeatures+gamma).multiply(
 				BigInteger.valueOf(numPermutations));
 		if (bigIntBank.compareTo(maxLong) > 0) {
 			AnalysisUtil
 					.exit("Arithmetic overflow. Try decreasing the number of permutations.");
 		}
 		long bank = bigIntBank.longValue();
-		int[] featureIndicesToPermute = null;
+		
 		permutationsPerFeature = new int[numFeatures];
-		if (removeFeatures) {
+		if (significanceBooster) {
 			featureIndicesToPermute = new int[numFeatures];
 			for (int i = 0; i < numFeatures; i++) {
 				featureIndicesToPermute[i] = i;
@@ -811,8 +837,11 @@ public class MarkerSelection {
 			Arrays.fill(permutationsPerFeature, numPermutations);
 		}
 
-		int lengthOfIndicesToPermute = numFeatures;
-
+		lengthOfIndicesToPermute = numFeatures;
+		
+		runningTimePerFeature = new long[numFeatures];
+		Arrays.fill(runningTimePerFeature, -1);
+		long start = System.currentTimeMillis();
 		while (bank > 0) {
 			int[] permutedClassZeroIndices = null;
 			int[] permutedClassOneIndices = null;
@@ -878,7 +907,7 @@ public class MarkerSelection {
 					}
 				}
 
-				if (removeFeatures) {
+				if (significanceBooster) {
 					permutationsPerFeature[index]++;
 					double k = featureSpecificPValues[index];
 					int N = permutationsPerFeature[index];
@@ -890,10 +919,12 @@ public class MarkerSelection {
 					if (d >= theta) { // include marker
 						featureIndicesToPermute[lengthOfIndicesToPermute] = index;
 						lengthOfIndicesToPermute++;
+					} else {
+						runningTimePerFeature[index] = System.currentTimeMillis()-start;
 					}
-
 				}
 			}
+			bank -= gamma;
 
 			/*
 			 * Sorting.sort(permutedScores, Sorting.DESCENDING);
@@ -910,7 +941,7 @@ public class MarkerSelection {
 			 * if(permutedScores[i] <= score) { rankBasedPValues[i] += 1.0; } } }
 			 */
 
-			if (!removeFeatures) {
+			if (false && !significanceBooster) {
 				for (int i = 0; i < numFeatures; i++) {
 					permutedScores[i] = Math.abs(permutedScores[i]);
 					monotonicPermutedScores[i] = permutedScores[i];
@@ -953,8 +984,9 @@ public class MarkerSelection {
 					}
 				}
 			}
-
 		}
+		long end = System.currentTimeMillis();
+		elapsedTime = end-start;
 	}
 
 	/**

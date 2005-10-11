@@ -726,29 +726,34 @@ public class MarkerSelection {
 		OdfWriter pw = null;
 		try {
 			String[] columnNames = null;
+			String[] columnTypes = null;
 			if (!significanceBooster) {
 				if (asymptotic) {
 					columnNames = new String[] { "Rank", "Feature", "Score",
-							"Feature P", "FDR(BH)", "Bonferroni", "Q Value" };
+							"Feature P", "FDR(BH)", "Q Value", "Bonferroni" };
+					columnTypes = new String[]{"int", "String", "double", "double", "double", "double", "double"};
 				} else if (complete) {
 					columnNames = new String[] { "Rank", "Feature", "Score",
-							"Feature P", "FDR(BH)", "Bonferroni", "Q Value",
+							"Feature P", "FDR(BH)", "Q Value", "Bonferroni",
 							"maxT", "FWER" };
+					columnTypes = new String[]{"int", "String", "double", "double", "double", "double", "double", "double", "double"};
 				} else {
 					columnNames = new String[] { "Rank", "Feature", "Score",
 							"Feature P", "Feature P Low", "Feature P High",
-							"FDR(BH)", "Bonferroni", "Q Value", "maxT", "FWER" };
+							"FDR(BH)", "Q Value", "Bonferroni", "maxT", "FWER" };
+					columnTypes = new String[]{"int", "String", "double", "double", "double", "double", "double", "double", "double", "double", "double"};
 				}
 
 			} else {
 				columnNames = new String[] { "Rank", "Feature", "Score",
 						"Feature P", "Feature P Low", "Feature P High",
-						"FDR(BH)", "Bonferroni", "Q Value", "Permutations",
+						"FDR(BH)", "Q Value", "Bonferroni", "Permutations",
 						"Active" };
+				columnTypes = new String[]{"int", "String", "double", "double", "double", "double", "double", "double", "double", "double", "boolean"};
 			}
 			pw = new OdfWriter(outputFileName, columnNames,
 					"Comparative Marker Selection", numFeatures, true);
-
+			pw.setColumnTypes(columnTypes);
 			pw.addHeader("Dataset File", AnalysisUtil.getFileName(datasetFile));
 			pw.addHeader("Class File", AnalysisUtil.getFileName(clsFile));
 			if (covariate != null) {
@@ -826,9 +831,9 @@ public class MarkerSelection {
 				pw.print("\t");
 				pw.print(fdr[index]);
 				pw.print("\t");
-				pw.print(bonferroni);
-				pw.print("\t");
 				pw.print(qvalues[i]);
+				pw.print("\t");
+				pw.print(bonferroni);
 				if (!significanceBooster && !asymptotic) {
 					pw.print("\t");
 					pw.print(maxT[index]);

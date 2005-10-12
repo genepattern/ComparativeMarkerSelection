@@ -1,51 +1,54 @@
-JVMLevel=1.4
+#Wed Oct 12 11:16:38 EDT 2005
 author=Joshua Gould, Gad Getz, Stefano Monti
 commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> <significance.booster> <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -t<theta>
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q Value, maxT P-Value, FWER, Feature-Specific P-Value, and Bonferroni.
 fileFormat=Comparative Marker Selection
+JVMLevel=1.4
 language=Java, R
+LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00044\:999999999
 name=ComparativeMarkerSelection
 os=any
 privacy=public
+publicationDate=10/12/2005 11\:16 
 quality=production
 taskType=Gene List Selection
 userid=GenePattern
 version=Added significance booster option
 
-p1_MODE=IN
-p1_TYPE=FILE
 p1_default_value=
-p1_description=The input file - .res, .gct, .odf type=Dataset
+p1_description=The input file - .res, .gct, .odf type\=Dataset
 p1_domain=
 p1_fileFormat=Dataset;gct;res
+p1_MODE=IN
 p1_name=input.filename
 p1_optional=
 p1_prefix_when_specified=
+p1_TYPE=FILE
 p1_type=java.io.File
 p1_value=
 
-p2_MODE=IN
-p2_TYPE=FILE
 p2_default_value=
 p2_description=The class file - .cls
 p2_domain=
 p2_fileFormat=cls
+p2_MODE=IN
 p2_name=cls.filename
 p2_optional=
 p2_prefix_when_specified=
+p2_TYPE=FILE
 p2_type=java.io.File
 p2_value=
 
-p3_MODE=IN
-p3_TYPE=FILE
 p3_default_value=
 p3_description=The class file containing the confounding variable.
 p3_domain=
 p3_fileFormat=cls
+p3_MODE=IN
 p3_name=confounding.variable.cls.filename
 p3_optional=on
 p3_prefix_when_specified=
+p3_TYPE=FILE
 p3_type=java.io.File
 p3_value=
 
@@ -80,7 +83,7 @@ p6_type=java.lang.String
 p6_value=
 
 p7_default_value=1000
-p7_description=The number of permutations to perform
+p7_description=The number of permutations to perform (use 0 to calculate asymptotic p-values)
 p7_domain=
 p7_fileFormat=
 p7_name=number.of.permutations
@@ -152,4 +155,5 @@ p14_optional=
 p14_prefix_when_specified=
 p14_type=java.lang.String
 p14_value=
+
 

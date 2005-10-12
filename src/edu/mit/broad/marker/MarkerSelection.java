@@ -749,7 +749,7 @@ public class MarkerSelection {
 						"Feature P", "Feature P Low", "Feature P High",
 						"FDR(BH)", "Q Value", "Bonferroni", "Permutations",
 						"Active" };
-				columnTypes = new String[]{"int", "String", "double", "double", "double", "double", "double", "double", "double", "double", "boolean"};
+				columnTypes = new String[]{"int", "String", "double", "double", "double", "double", "double", "double", "double", "int", "boolean"};
 			}
 			pw = new OdfWriter(outputFileName, columnNames,
 					"Comparative Marker Selection", numFeatures, true);
@@ -845,7 +845,7 @@ public class MarkerSelection {
 					pw.print("\t");
 					pw.print(permutationsPerFeature[index]);
 					pw.print("\t");
-					pw.print(active[index] ? "1" : "0");
+					pw.print(active[index] ? "true" : "false");
 				}
 				pw.println();
 			}

@@ -6,7 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.math.BigInteger;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
@@ -148,11 +148,7 @@ public class MarkerSelection {
 	/** Whether to smooth p values */
 	private boolean smoothPValues;
 
-	private long[] runningTimePerFeature;
-
-	private long elapsedTime;
-
-	private long gamma = 0;
+	private double gamma = 0;
 
 	private int[] featureIndicesToPermute;
 
@@ -477,6 +473,8 @@ public class MarkerSelection {
 			monotonicPermutedScores = new double[numFeatures];
 			maxT = new double[numFeatures];
 			fwer = new double[numFeatures];
+		} else {
+			gamma = estimateGamma();
 		}
 		if (asymptotic) {
 			TTestImpl test = new TTestImpl();
@@ -731,17 +729,22 @@ public class MarkerSelection {
 				if (asymptotic) {
 					columnNames = new String[] { "Rank", "Feature", "Score",
 							"Feature P", "FDR(BH)", "Q Value", "Bonferroni" };
-					columnTypes = new String[]{"int", "String", "double", "double", "double", "double", "double"};
+					columnTypes = new String[] { "int", "String", "double",
+							"double", "double", "double", "double" };
 				} else if (complete) {
 					columnNames = new String[] { "Rank", "Feature", "Score",
 							"Feature P", "FDR(BH)", "Q Value", "Bonferroni",
 							"maxT", "FWER" };
-					columnTypes = new String[]{"int", "String", "double", "double", "double", "double", "double", "double", "double"};
+					columnTypes = new String[] { "int", "String", "double",
+							"double", "double", "double", "double", "double",
+							"double" };
 				} else {
 					columnNames = new String[] { "Rank", "Feature", "Score",
 							"Feature P", "Feature P Low", "Feature P High",
 							"FDR(BH)", "Q Value", "Bonferroni", "maxT", "FWER" };
-					columnTypes = new String[]{"int", "String", "double", "double", "double", "double", "double", "double", "double", "double", "double"};
+					columnTypes = new String[] { "int", "String", "double",
+							"double", "double", "double", "double", "double",
+							"double", "double", "double" };
 				}
 
 			} else {
@@ -749,7 +752,9 @@ public class MarkerSelection {
 						"Feature P", "Feature P Low", "Feature P High",
 						"FDR(BH)", "Q Value", "Bonferroni", "Permutations",
 						"Active" };
-				columnTypes = new String[]{"int", "String", "double", "double", "double", "double", "double", "double", "double", "int", "boolean"};
+				columnTypes = new String[] { "int", "String", "double",
+						"double", "double", "double", "double", "double",
+						"double", "int", "boolean" };
 			}
 			pw = new OdfWriter(outputFileName, columnNames,
 					"Comparative Marker Selection", numFeatures, true);
@@ -872,10 +877,110 @@ public class MarkerSelection {
 		}
 	}
 
+	private final double estimateGamma() {
+		Permuter permuter = null;
+		int[] classZeroIndices = classVector.getIndices(0);
+		int[] classOneIndices = classVector.getIndices(1);
+
+		if (permuter instanceof UnbalancedRandomCovariatePermuter) {
+			new UnbalancedRandomCovariatePermuter(classVector, covariate, seed);
+		} else if (permuter instanceof BalancedRandomPermuter) {
+			permuter = new BalancedRandomPermuter(classZeroIndices,
+					classOneIndices, seed);
+
+		} else {
+			permuter = new UnbalancedRandomPermuter(classVector.size(),
+					classVector.getIndices(1).length, seed);
+		}
+		long gammaStart = System.currentTimeMillis();
+
+		int[] permutedClassZeroIndices = null;
+		int[] permutedClassOneIndices = null;
+		for (int test = 0; test < 100; test++) {
+			int[] permutedAssignments = permuter.next();
+
+			if (debug) {
+				debugger.addAssignment(permutedAssignments);
+			}
+			java.util.List zeroIndices = new java.util.ArrayList();
+			java.util.List oneIndices = new java.util.ArrayList();
+			for (int i = 0, length = permutedAssignments.length; i < length; i++) {
+				if (permutedAssignments[i] == 0) {
+					zeroIndices.add(new Integer(i));
+				} else {
+					oneIndices.add(new Integer(i));
+				}
+			}
+
+			permutedClassZeroIndices = new int[zeroIndices.size()];
+			for (int i = 0, length = permutedClassZeroIndices.length; i < length; i++) {
+				permutedClassZeroIndices[i] = ((Integer) zeroIndices.get(i))
+						.intValue();
+			}
+
+			permutedClassOneIndices = new int[oneIndices.size()];
+			for (int i = 0, length = permutedClassOneIndices.length; i < length; i++) {
+				permutedClassOneIndices[i] = ((Integer) oneIndices.get(i))
+						.intValue();
+			}
+		}
+		long gammaEnd = System.currentTimeMillis();
+		double gammaElapsed = gammaEnd - gammaStart;
+
+		double[] dummyArray = new double[1];
+		int dummyInt = 0;
+		double[] dummyRow = (double[]) dataArray[0].clone();
+		double[][] dummyData = new double[1][];
+		dummyData[0] = dummyRow;
+
+		long permStart = System.currentTimeMillis();
+		for (int test = 0; test < 100; test++) {
+			// calculate time for 1 feature
+			statisticalMeasure.compute(dummyData, permutedClassZeroIndices,
+					permutedClassOneIndices, permutedScores, null, -1);
+			int index = 0;
+			double score = scores[index];
+			if (testDirection == Constants.TWO_SIDED
+					|| testDirection == Constants.CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
+				if (permutedScores[index] >= score) {
+					dummyArray[index] += 1.0;
+				}
+			} else {
+				if (permutedScores[index] <= score) {
+					dummyArray[index] += 1.0;
+				}
+			}
+
+			if (significanceBooster) {
+				dummyArray[index]++;
+				double k = dummyArray[index];
+				int N = (int) dummyArray[index];
+				if (testDirection == Constants.TWO_SIDED) {
+					k = Math.min(k, N - k);
+				}
+				double d = 2 * 1.96 * Math.sqrt((N + 1 - k)
+						/ ((N + 3) * (k + 1)));
+				if (d >= 0) { // theta include marker
+					dummyArray[0] = index;
+					dummyInt++;
+				}
+			}
+		}
+		long permEnd = System.currentTimeMillis();
+		double permElapsed = permEnd - permStart;
+		double permTimeForOne = permElapsed/100;
+	//	System.out.println("permTimeForOne " + permTimeForOne);
+		double gammaTimeForOne = gammaElapsed/100;
+	//	System.out.println("gammaTimeForOne " + gammaTimeForOne);
+		double gamma = gammaTimeForOne/permTimeForOne;
+	//	System.out.println("gamma " + gamma);
+		return gamma;
+	}
+
 	private final void permute() {
-		BigInteger maxLong = BigInteger.valueOf(Long.MAX_VALUE);
-		BigInteger bigIntBank = BigInteger.valueOf(numFeatures + gamma)
-				.multiply(BigInteger.valueOf(numPermutations));
+		BigDecimal maxLong = BigDecimal.valueOf(Long.MAX_VALUE);
+		BigDecimal bigIntBank = new BigDecimal(numFeatures + gamma)
+				.multiply(BigDecimal.valueOf(numPermutations));
 		if (bigIntBank.compareTo(maxLong) > 0) {
 			AnalysisUtil
 					.exit("Arithmetic overflow. Try decreasing the number of permutations.");
@@ -894,9 +999,6 @@ public class MarkerSelection {
 
 		lengthOfIndicesToPermute = numFeatures;
 
-		runningTimePerFeature = new long[numFeatures];
-		Arrays.fill(runningTimePerFeature, -1);
-		long start = System.currentTimeMillis();
 		while (bank > 0) {
 			int[] permutedClassZeroIndices = null;
 			int[] permutedClassOneIndices = null;
@@ -974,10 +1076,6 @@ public class MarkerSelection {
 					if (d >= theta) { // include marker
 						featureIndicesToPermute[lengthOfIndicesToPermute] = index;
 						lengthOfIndicesToPermute++;
-					} else {
-						runningTimePerFeature[index] = System
-								.currentTimeMillis()
-								- start;
 					}
 				}
 			}
@@ -1042,8 +1140,6 @@ public class MarkerSelection {
 				}
 			}
 		}
-		long end = System.currentTimeMillis();
-		elapsedTime = end - start;
 	}
 
 	/**

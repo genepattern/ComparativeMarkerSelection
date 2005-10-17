@@ -62,7 +62,7 @@ p4_prefix_when_specified=
 p4_type=java.lang.String
 p4_value=0\=Class 0;1\=Class 1;2\=2 Sided
 
-p5_default_value=1
+p5_default_value=0
 p5_description=The statistic to use
 p5_domain=
 p5_fileFormat=

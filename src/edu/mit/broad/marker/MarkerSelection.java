@@ -896,7 +896,8 @@ public class MarkerSelection {
 
 		int[] permutedClassZeroIndices = null;
 		int[] permutedClassOneIndices = null;
-		for (int test = 0; test < 100; test++) {
+		int tries = 100;
+		for (int test = 0; test < tries; test++) {
 			int[] permutedAssignments = permuter.next();
 
 			if (debug) {
@@ -934,11 +935,13 @@ public class MarkerSelection {
 		dummyData[0] = dummyRow;
 
 		long permStart = System.currentTimeMillis();
-		for (int test = 0; test < 100; test++) {
+		int[] featureIndicesToPermute = {0};
+		                                                    						
+		for (int test = 0; test < tries; test++) {
 			// calculate time for 1 feature
 			statisticalMeasure.compute(dummyData, permutedClassZeroIndices,
-					permutedClassOneIndices, permutedScores, null, -1);
-			int index = 0;
+					permutedClassOneIndices, permutedScores, featureIndicesToPermute, 1);
+			int index = featureIndicesToPermute != null ? featureIndicesToPermute[0] : 0;
 			double score = scores[index];
 			if (testDirection == Constants.TWO_SIDED
 					|| testDirection == Constants.CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
@@ -968,12 +971,9 @@ public class MarkerSelection {
 		}
 		long permEnd = System.currentTimeMillis();
 		double permElapsed = permEnd - permStart;
-		double permTimeForOne = permElapsed/100;
-	//	System.out.println("permTimeForOne " + permTimeForOne);
-		double gammaTimeForOne = gammaElapsed/100;
-	//	System.out.println("gammaTimeForOne " + gammaTimeForOne);
+		double permTimeForOne = permElapsed/tries;
+		double gammaTimeForOne = gammaElapsed/tries;
 		double gamma = gammaTimeForOne/permTimeForOne;
-	//	System.out.println("gamma " + gamma);
 		return gamma;
 	}
 

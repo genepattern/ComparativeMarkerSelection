@@ -138,7 +138,7 @@ p12_prefix_when_specified=
 p12_type=java.lang.String
 p12_value=true\=yes;false\=no
 
-p13_default_value=0.20
+p13_default_value=0.70
 p13_description=Value for removing features when using significance booster
 p13_name=theta
 p13_optional=on

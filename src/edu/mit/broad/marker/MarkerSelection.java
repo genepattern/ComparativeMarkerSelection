@@ -514,9 +514,26 @@ public class MarkerSelection {
 		absoluteScores = null;
 		permutedScores = null;
 
-		if (asymptotic) {
+		double[] foldChange = new double[numFeatures];
+		for (int i = 0; i < numFeatures; i++) {
+			double meanClassZero = 0;
+			double[] row = dataArray[i];
+			for (int j = 0, length = classZeroIndices.length; j < length; j++) {
+				meanClassZero += row[classZeroIndices[j]];
+			}
+			meanClassZero = meanClassZero / classZeroIndices.length;
 
-		} else {
+			double meanClassOne = 0;
+			for (int j = 0, length = classOneIndices.length; j < length; j++) {
+				meanClassOne += row[classOneIndices[j]];
+			}
+			meanClassOne = meanClassOne / classOneIndices.length;
+			if (meanClassOne == 0) {
+				meanClassOne = 0.01;
+			}
+			foldChange[i] = meanClassZero / meanClassOne;
+		}
+		if (!asymptotic) {
 			for (int i = 0; i < numFeatures; i++) {
 				// fpr[i] /= numFeatures;
 				// fpr[i] /= numPermutations;
@@ -728,33 +745,35 @@ public class MarkerSelection {
 			if (!significanceBooster) {
 				if (asymptotic) {
 					columnNames = new String[] { "Rank", "Feature", "Score",
-							"Feature P", "FDR(BH)", "Q Value", "Bonferroni" };
+							"Feature P", "FDR(BH)", "Q Value", "Bonferroni",
+							"Fold Change" };
 					columnTypes = new String[] { "int", "String", "double",
-							"double", "double", "double", "double" };
+							"double", "double", "double", "double", "double" };
 				} else if (complete) {
 					columnNames = new String[] { "Rank", "Feature", "Score",
 							"Feature P", "FDR(BH)", "Q Value", "Bonferroni",
-							"maxT", "FWER" };
+							"maxT", "FWER", "Fold Change" };
 					columnTypes = new String[] { "int", "String", "double",
 							"double", "double", "double", "double", "double",
-							"double" };
+							"double", "double" };
 				} else {
 					columnNames = new String[] { "Rank", "Feature", "Score",
 							"Feature P", "Feature P Low", "Feature P High",
-							"FDR(BH)", "Q Value", "Bonferroni", "maxT", "FWER" };
+							"FDR(BH)", "Q Value", "Bonferroni", "maxT", "FWER",
+							"Fold Change" };
 					columnTypes = new String[] { "int", "String", "double",
 							"double", "double", "double", "double", "double",
-							"double", "double", "double" };
+							"double", "double", "double", "double" };
 				}
 
 			} else {
 				columnNames = new String[] { "Rank", "Feature", "Score",
 						"Feature P", "Feature P Low", "Feature P High",
-						"FDR(BH)", "Q Value", "Bonferroni", "Permutations",
-						"Active" };
+						"FDR(BH)", "Q Value", "Bonferroni", "Fold Change",
+						"Permutations", "Active" };
 				columnTypes = new String[] { "int", "String", "double",
 						"double", "double", "double", "double", "double",
-						"double", "int", "boolean" };
+						"double", "double", "int", "boolean" };
 			}
 			pw = new OdfWriter(outputFileName, columnNames,
 					"Comparative Marker Selection", numFeatures, true);
@@ -844,8 +863,11 @@ public class MarkerSelection {
 					pw.print(maxT[index]);
 					pw.print("\t");
 					pw.print(fwer[index]);
-
 				}
+
+				pw.print("\t");
+				pw.print(foldChange[index]);
+
 				if (significanceBooster) {
 					pw.print("\t");
 					pw.print(permutationsPerFeature[index]);
@@ -862,9 +884,7 @@ public class MarkerSelection {
 			AnalysisUtil
 					.exit("An error occurred while saving the output file.");
 		} finally {
-
 			if (pw != null) {
-
 				try {
 					pw.close();
 				} catch (Exception x) {
@@ -935,13 +955,15 @@ public class MarkerSelection {
 		dummyData[0] = dummyRow;
 
 		long permStart = System.currentTimeMillis();
-		int[] featureIndicesToPermute = {0};
-		                                                    						
+		int[] featureIndicesToPermute = { 0 };
+
 		for (int test = 0; test < tries; test++) {
 			// calculate time for 1 feature
 			statisticalMeasure.compute(dummyData, permutedClassZeroIndices,
-					permutedClassOneIndices, permutedScores, featureIndicesToPermute, 1);
-			int index = featureIndicesToPermute != null ? featureIndicesToPermute[0] : 0;
+					permutedClassOneIndices, permutedScores,
+					featureIndicesToPermute, 1);
+			int index = featureIndicesToPermute != null ? featureIndicesToPermute[0]
+					: 0;
 			double score = scores[index];
 			if (testDirection == Constants.TWO_SIDED
 					|| testDirection == Constants.CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
@@ -971,9 +993,9 @@ public class MarkerSelection {
 		}
 		long permEnd = System.currentTimeMillis();
 		double permElapsed = permEnd - permStart;
-		double permTimeForOne = permElapsed/tries;
-		double gammaTimeForOne = gammaElapsed/tries;
-		double gamma = gammaTimeForOne/permTimeForOne;
+		double permTimeForOne = permElapsed / tries;
+		double gammaTimeForOne = gammaElapsed / tries;
+		double gamma = gammaTimeForOne / permTimeForOne;
 		return gamma;
 	}
 

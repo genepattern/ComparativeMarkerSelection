@@ -12,6 +12,7 @@ import java.util.StringTokenizer;
 
 import org.apache.commons.math.MathException;
 import org.apache.commons.math.stat.inference.TTestImpl;
+import org.apache.commons.math.stat.regression.SimpleRegression;
 import org.genepattern.data.expr.ExpressionData;
 import org.genepattern.data.matrix.ClassVector;
 import org.genepattern.data.matrix.DoubleMatrix2D;
@@ -508,7 +509,12 @@ public class MarkerSelection {
 				}
 			}
 		} else {
+			long start = System.currentTimeMillis();
 			permute();
+			long end = System.currentTimeMillis();
+			if(printStackTraces) {
+				System.out.println("elapsed " + (end-start));
+			}
 		}
 
 		// free temporary storage
@@ -1005,7 +1011,6 @@ public class MarkerSelection {
 	}
 
 	private final double estimateGamma2() {
-		System.out.println("ASD");
 		Permuter permuter = null;
 		int[] classZeroIndices = classVector.getIndices(0);
 		int[] classOneIndices = classVector.getIndices(1);
@@ -1021,9 +1026,11 @@ public class MarkerSelection {
 					classVector.getIndices(1).length, seed);
 		}
 
-		int genes = 10;
-		double[] times = new double[genes];
-		for (int numGenes = 1; numGenes <= genes; numGenes++) {
+		int[] numGenesArray = {1,2,3,4,5,6,7,8,9,10, 50, 100, 150};
+		double[] times = new double[numGenesArray.length];
+		
+		for (int n = 0; n < numGenesArray.length; n++) {
+			int numGenes = numGenesArray[n];
 			int tries = 100;
 			double bank = Double.MAX_VALUE;
 			double[][] tempDataArray = new double[numGenes][];
@@ -1092,6 +1099,7 @@ public class MarkerSelection {
 				if (length == 0) {
 					bank = 0;
 				}
+				
 				for (int i = 0; i < length && bank > 0; i++) {
 					bank--;
 					int index = featureIndicesToPermute != null ? featureIndicesToPermute[i]
@@ -1123,25 +1131,31 @@ public class MarkerSelection {
 						}
 					}
 				}
+				
 
 			}
 			long end = System.currentTimeMillis();
 			double elapsed = (end - start);
 			elapsed /= tries;
-			times[numGenes-1] = elapsed;
+			times[n] = elapsed;
 		}
-		double gamma = 2 * (times[0] - times[1]) / (times[1] - times[0]);
-		System.out.println("times");
+		
+		SimpleRegression regression = new SimpleRegression();
 		for(int i = 0; i < times.length; i++) {
-			System.out.println(times[i]);
+			System.out.println(numGenesArray[i] + "\t" + times[i]);
+			regression.addData(numGenesArray[i],times[i]);
 		}
+		double gamma = 10;
+		System.out.println(gamma);
+		System.out.println(regression.predict(numFeatures) + " " + regression.predict(0) + " " + regression.predict(1) + " " + regression.predict(2));
+	
 		if(gamma < 0) {
 			gamma = 0;
 		}
 		return gamma;
 	}
 
-	private final void permute() {
+	private final void permute() {	
 		BigDecimal maxLong = BigDecimal.valueOf(Long.MAX_VALUE);
 		BigDecimal bigIntBank = new BigDecimal(numFeatures + gamma)
 				.multiply(BigDecimal.valueOf(numPermutations));
@@ -1162,6 +1176,7 @@ public class MarkerSelection {
 		}
 
 		lengthOfIndicesToPermute = numFeatures;
+		
 
 		while (bank > 0) {
 			int[] permutedClassZeroIndices = null;

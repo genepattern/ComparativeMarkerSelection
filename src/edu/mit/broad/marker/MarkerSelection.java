@@ -153,6 +153,12 @@ public class MarkerSelection {
 
 	private double gamma = 0;
 
+	/**
+	 * if <tt>true</tt> don't calculate fwer, maxT even when significance
+	 * booster is off
+	 */
+	private static boolean testGamma = false;
+
 	private int[] featureIndicesToPermute;
 
 	private int lengthOfIndicesToPermute;
@@ -313,6 +319,7 @@ public class MarkerSelection {
 		double minStd = -1;
 		String confoundingClsFile = null;
 		double theta = -1;
+		boolean performAllPairs = true;
 		for (int i = 12; i < args.length; i++) {
 			String arg = args[i].substring(0, 2);
 			String value = args[i].substring(2, args[i].length());
@@ -334,9 +341,13 @@ public class MarkerSelection {
 				} catch (NumberFormatException nfe) {
 					AnalysisUtil.exit("Theta is not a number.");
 				}
+			} else if (arg.equals("-p")) {
+				performAllPairs = value.equalsIgnoreCase("all pairs");
+			} else if (arg.equals("-z")) {
+				MarkerSelection.testGamma = true; // don't compute fwer, etc
 			}
 		}
-
+		// MarkerSelection.testGamma = true; // FIXME
 		ClassVector classVector = AnalysisUtil.readClassVector(clsFile);
 		IExpressionDataReader reader = AnalysisUtil
 				.getExpressionReader(datasetFile);
@@ -359,17 +370,62 @@ public class MarkerSelection {
 		}
 
 		if (classVector.getClassCount() > 2) {
-			ClassVector[] oneVersusAll = classVector.getOneVersusAll();
-			String baseOutputFileName = Util.getBaseFileName(outputFileName);
-			for (int i = 0; i < classVector.getClassCount(); i++) {
-				String tempOutputFileName = baseOutputFileName + "."
-						+ classVector.getClassName(i) + ".vs.Rest.odf";
-				new MarkerSelection(dataset, datasetFile, oneVersusAll[i],
-						clsFile, _numPermutations, testDirection,
-						tempOutputFileName, balanced, complete, metric, minStd,
-						seed, confoundingClassVector, confoundingClsFile,
-						removeFeatures, theta, smoothPValues);
+			if (performAllPairs) {
+				ClassVector[] allPairs = classVector.getAllPairs();
+
+				String baseOutputFileName = Util
+						.getBaseFileName(outputFileName);
+				int n = classVector.getClassCount();
+				int allPairsIndex = 0;
+				for (int i = 0; i < n; i++) {
+					for (int j = i + 1; j < n; j++) {
+						int[] iIndices = classVector.getIndices(i);
+						int[] jIndices = classVector.getIndices(j);
+						int[] indices = new int[iIndices.length
+								+ jIndices.length];
+						for (int k = 0; k < iIndices.length; k++) {
+							indices[k] = iIndices[k];
+						}
+						for (int k = 0; k < jIndices.length; k++) {
+							indices[k + iIndices.length] = jIndices[k];
+						}
+						DoubleMatrix2D pairwiseDataset = dataset.slice(null,
+								indices);
+						ClassVector pairwiseConfounder = null;
+						if (confoundingClassVector != null) {
+							pairwiseConfounder = confoundingClassVector
+									.slice(indices);
+						}
+						String tempOutputFileName = baseOutputFileName + "."
+								+ classVector.getClassName(i) + ".vs."
+								+ classVector.getClassName(j) + ".odf";
+						new MarkerSelection(pairwiseDataset, datasetFile,
+								allPairs[allPairsIndex++], clsFile,
+								_numPermutations, testDirection,
+								tempOutputFileName, balanced, complete, metric,
+								minStd, seed, pairwiseConfounder,
+								confoundingClsFile, removeFeatures, theta,
+								smoothPValues);
+
+					}
+				}
+
+			} else {
+				ClassVector[] oneVersusAll = classVector.getOneVersusAll();
+				String baseOutputFileName = Util
+						.getBaseFileName(outputFileName);
+				for (int i = 0; i < classVector.getClassCount(); i++) {
+					String tempOutputFileName = baseOutputFileName + "."
+							+ classVector.getClassName(i) + ".vs.Rest.odf";
+					new MarkerSelection(dataset, datasetFile, oneVersusAll[i],
+							clsFile, _numPermutations, testDirection,
+							tempOutputFileName, balanced, complete, metric,
+							minStd, seed, confoundingClassVector,
+							confoundingClsFile, removeFeatures, theta,
+							smoothPValues);
+				}
 			}
+
 		} else {
 			new MarkerSelection(dataset, datasetFile, classVector, clsFile,
 					_numPermutations, testDirection, outputFileName, balanced,
@@ -512,8 +568,8 @@ public class MarkerSelection {
 			long start = System.currentTimeMillis();
 			permute();
 			long end = System.currentTimeMillis();
-			if(printStackTraces) {
-				System.out.println("elapsed " + (end-start));
+			if (printStackTraces) {
+				System.out.println("elapsed " + (end - start));
 			}
 		}
 
@@ -923,115 +979,14 @@ public class MarkerSelection {
 			permuter = new UnbalancedRandomPermuter(classVector.size(),
 					classVector.getIndices(1).length, seed);
 		}
-		long gammaStart = System.currentTimeMillis();
 
-		int[] permutedClassZeroIndices = null;
-		int[] permutedClassOneIndices = null;
-		int tries = 100;
-		for (int test = 0; test < tries; test++) {
-			int[] permutedAssignments = permuter.next();
-
-			if (printPermutations) {
-				debugger.addAssignment(permutedAssignments);
-			}
-			java.util.List zeroIndices = new java.util.ArrayList();
-			java.util.List oneIndices = new java.util.ArrayList();
-			for (int i = 0, length = permutedAssignments.length; i < length; i++) {
-				if (permutedAssignments[i] == 0) {
-					zeroIndices.add(new Integer(i));
-				} else {
-					oneIndices.add(new Integer(i));
-				}
-			}
-
-			permutedClassZeroIndices = new int[zeroIndices.size()];
-			for (int i = 0, length = permutedClassZeroIndices.length; i < length; i++) {
-				permutedClassZeroIndices[i] = ((Integer) zeroIndices.get(i))
-						.intValue();
-			}
-
-			permutedClassOneIndices = new int[oneIndices.size()];
-			for (int i = 0, length = permutedClassOneIndices.length; i < length; i++) {
-				permutedClassOneIndices[i] = ((Integer) oneIndices.get(i))
-						.intValue();
-			}
-		}
-		long gammaEnd = System.currentTimeMillis();
-		double gammaElapsed = gammaEnd - gammaStart;
-
-		double[] dummyArray = new double[1];
-		int dummyInt = 0;
-		double[] dummyRow = (double[]) dataArray[0].clone();
-		double[][] dummyData = new double[1][];
-		dummyData[0] = dummyRow;
-
-		long permStart = System.currentTimeMillis();
-		int[] featureIndicesToPermute = { 0 };
-
-		for (int test = 0; test < tries; test++) {
-			// calculate time for 1 feature
-			statisticalMeasure.compute(dummyData, permutedClassZeroIndices,
-					permutedClassOneIndices, permutedScores,
-					featureIndicesToPermute, 1);
-			int index = featureIndicesToPermute != null ? featureIndicesToPermute[0]
-					: 0;
-			double score = scores[index];
-			if (testDirection == Constants.TWO_SIDED
-					|| testDirection == Constants.CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
-				if (permutedScores[index] >= score) {
-					dummyArray[index] += 1.0;
-				}
-			} else {
-				if (permutedScores[index] <= score) {
-					dummyArray[index] += 1.0;
-				}
-			}
-
-			if (significanceBooster) {
-				dummyArray[index]++;
-				double k = dummyArray[index];
-				int N = (int) dummyArray[index];
-				if (testDirection == Constants.TWO_SIDED) {
-					k = Math.min(k, N - k);
-				}
-				double d = 2 * 1.96 * Math.sqrt((N + 1 - k)
-						/ ((N + 3) * (k + 1)));
-				if (d >= 0) { // theta include marker
-					dummyArray[0] = index;
-					dummyInt++;
-				}
-			}
-		}
-		long permEnd = System.currentTimeMillis();
-		double permElapsed = permEnd - permStart;
-		double permTimeForOne = permElapsed / tries;
-		double gammaTimeForOne = gammaElapsed / tries;
-		double gamma = gammaTimeForOne / permTimeForOne;
-		return gamma;
-	}
-
-	private final double estimateGamma2() {
-		Permuter permuter = null;
-		int[] classZeroIndices = classVector.getIndices(0);
-		int[] classOneIndices = classVector.getIndices(1);
-
-		if (permuter instanceof UnbalancedRandomCovariatePermuter) {
-			new UnbalancedRandomCovariatePermuter(classVector, covariate, seed);
-		} else if (permuter instanceof BalancedRandomPermuter) {
-			permuter = new BalancedRandomPermuter(classZeroIndices,
-					classOneIndices, seed);
-
-		} else {
-			permuter = new UnbalancedRandomPermuter(classVector.size(),
-					classVector.getIndices(1).length, seed);
-		}
-
-		int[] numGenesArray = {1,2,3,4,5,6,7,8,9,10, 50, 100, 150};
+		int[] numGenesArray = { 1, 10, 50, 150, 200, 250, 300 };
+		int tries = 100; // num permuations to perform
 		double[] times = new double[numGenesArray.length];
-		
+		long estimateStart = System.currentTimeMillis();
 		for (int n = 0; n < numGenesArray.length; n++) {
 			int numGenes = numGenesArray[n];
-			int tries = 100;
+
 			double bank = Double.MAX_VALUE;
 			double[][] tempDataArray = new double[numGenes][];
 			for (int i = 0; i < numGenes; i++) {
@@ -1099,7 +1054,7 @@ public class MarkerSelection {
 				if (length == 0) {
 					bank = 0;
 				}
-				
+
 				for (int i = 0; i < length && bank > 0; i++) {
 					bank--;
 					int index = featureIndicesToPermute != null ? featureIndicesToPermute[i]
@@ -1131,7 +1086,6 @@ public class MarkerSelection {
 						}
 					}
 				}
-				
 
 			}
 			long end = System.currentTimeMillis();
@@ -1139,23 +1093,22 @@ public class MarkerSelection {
 			elapsed /= tries;
 			times[n] = elapsed;
 		}
-		
+
 		SimpleRegression regression = new SimpleRegression();
-		for(int i = 0; i < times.length; i++) {
-			System.out.println(numGenesArray[i] + "\t" + times[i]);
-			regression.addData(numGenesArray[i],times[i]);
+		for (int i = 0; i < times.length; i++) {
+			regression.addData(numGenesArray[i], times[i]);
+			System.out.println(numGenesArray[i] + " " + times[i]);
 		}
-		double gamma = 10;
-		System.out.println(gamma);
-		System.out.println(regression.predict(numFeatures) + " " + regression.predict(0) + " " + regression.predict(1) + " " + regression.predict(2));
-	
-		if(gamma < 0) {
+		long estimateEnd = System.currentTimeMillis();
+		System.out.println((estimateEnd - estimateStart));
+		double gamma = regression.getIntercept() / regression.getSlope();
+		if (gamma < 0) {
 			gamma = 0;
 		}
 		return gamma;
 	}
 
-	private final void permute() {	
+	private final void permute() {
 		BigDecimal maxLong = BigDecimal.valueOf(Long.MAX_VALUE);
 		BigDecimal bigIntBank = new BigDecimal(numFeatures + gamma)
 				.multiply(BigDecimal.valueOf(numPermutations));
@@ -1176,7 +1129,6 @@ public class MarkerSelection {
 		}
 
 		lengthOfIndicesToPermute = numFeatures;
-		
 
 		while (bank > 0) {
 			int[] permutedClassZeroIndices = null;
@@ -1275,7 +1227,7 @@ public class MarkerSelection {
 			 * if(permutedScores[i] <= score) { rankBasedPValues[i] += 1.0; } } }
 			 */
 
-			if (!significanceBooster) {
+			if (!testGamma && !significanceBooster) {
 				for (int i = 0; i < numFeatures; i++) {
 					permutedScores[i] = Math.abs(permutedScores[i]);
 					monotonicPermutedScores[i] = permutedScores[i];

@@ -153,6 +153,8 @@ public class MarkerSelection {
 
 	private double gamma = 0;
 
+	private boolean estimateGamma = true;
+
 	/**
 	 * if <tt>true</tt> don't calculate fwer, maxT even when significance
 	 * booster is off
@@ -166,12 +168,36 @@ public class MarkerSelection {
 	/** whether to calculate asymptotic p-values */
 	private boolean asymptotic = false;
 
+	/**
+	 * Creates a new instance
+	 * 
+	 * @param _dataset
+	 * @param _datasetFile
+	 * @param _classVector
+	 * @param _clsFile
+	 * @param _numPermutations
+	 * @param _side
+	 * @param _outputFileName
+	 * @param _balanced
+	 * @param _complete
+	 * @param _metric
+	 * @param _minStd
+	 * @param _seed
+	 * @param _confoundingClassVector
+	 * @param _confoundingClsFile
+	 * @param _removeFeatures
+	 * @param _theta
+	 * @param _smoothPValues
+	 * @param _gamma
+	 *            if gamma >= 0 set gamma manually, otherwise estimate it
+	 */
 	public MarkerSelection(DoubleMatrix2D _dataset, String _datasetFile,
 			ClassVector _classVector, String _clsFile, int _numPermutations,
 			int _side, String _outputFileName, boolean _balanced,
 			boolean _complete, int _metric, double _minStd, int _seed,
 			ClassVector _confoundingClassVector, String _confoundingClsFile,
-			boolean _removeFeatures, double _theta, boolean _smoothPValues) {
+			boolean _removeFeatures, double _theta, boolean _smoothPValues,
+			double _gamma) {
 		this.dataset = _dataset;
 		this.dataArray = _dataset.getArray();
 		this.datasetFile = _datasetFile;
@@ -194,6 +220,9 @@ public class MarkerSelection {
 		this.significanceBooster = _removeFeatures;
 		this.theta = _theta;
 		this.smoothPValues = _smoothPValues;
+		this.gamma = _gamma;
+		this.estimateGamma = gamma < 0;
+
 		if (_complete && _removeFeatures) {
 			AnalysisUtil
 					.exit("Speedup option can only be used when performing random permutations.");
@@ -320,6 +349,8 @@ public class MarkerSelection {
 		String confoundingClsFile = null;
 		double theta = -1;
 		boolean performAllPairs = true;
+		double gamma = -1;
+
 		for (int i = 12; i < args.length; i++) {
 			String arg = args[i].substring(0, 2);
 			String value = args[i].substring(2, args[i].length());
@@ -329,6 +360,10 @@ public class MarkerSelection {
 			if (arg.equals("-m")) {
 				try {
 					minStd = Double.parseDouble(value);
+					if (minStd <= 0) {
+						AnalysisUtil
+								.exit("Minimum standard deviation must be > 0.");
+					}
 				} catch (NumberFormatException nfe) {
 					AnalysisUtil
 							.exit("Minimum standard deviation is not a number.");
@@ -338,6 +373,9 @@ public class MarkerSelection {
 			} else if (arg.equals("-t")) {
 				try {
 					theta = Double.parseDouble(value);
+					if (theta < 0) {
+						AnalysisUtil.exit("Theta must be >= 0.");
+					}
 				} catch (NumberFormatException nfe) {
 					AnalysisUtil.exit("Theta is not a number.");
 				}
@@ -345,6 +383,15 @@ public class MarkerSelection {
 				performAllPairs = value.equalsIgnoreCase("all pairs");
 			} else if (arg.equals("-z")) {
 				MarkerSelection.testGamma = true; // don't compute fwer, etc
+			} else if (arg.equals("-g")) {
+				try {
+					gamma = Double.parseDouble(value);
+					if (gamma < 0) {
+						AnalysisUtil.exit("Gamma must be >= 0.");
+					}
+				} catch (NumberFormatException nfe) {
+					AnalysisUtil.exit("Gamma is not a number.");
+				}
 			}
 		}
 		// MarkerSelection.testGamma = true; // FIXME
@@ -405,7 +452,7 @@ public class MarkerSelection {
 								tempOutputFileName, balanced, complete, metric,
 								minStd, seed, pairwiseConfounder,
 								confoundingClsFile, removeFeatures, theta,
-								smoothPValues);
+								smoothPValues, gamma);
 
 					}
 				}
@@ -422,7 +469,7 @@ public class MarkerSelection {
 							tempOutputFileName, balanced, complete, metric,
 							minStd, seed, confoundingClassVector,
 							confoundingClsFile, removeFeatures, theta,
-							smoothPValues);
+							smoothPValues, gamma);
 				}
 			}
 
@@ -430,7 +477,8 @@ public class MarkerSelection {
 			new MarkerSelection(dataset, datasetFile, classVector, clsFile,
 					_numPermutations, testDirection, outputFileName, balanced,
 					complete, metric, minStd, seed, confoundingClassVector,
-					confoundingClsFile, removeFeatures, theta, smoothPValues);
+					confoundingClsFile, removeFeatures, theta, smoothPValues,
+					gamma);
 		}
 	}
 
@@ -533,7 +581,9 @@ public class MarkerSelection {
 			maxT = new double[numFeatures];
 			fwer = new double[numFeatures];
 		} else {
-			gamma = estimateGamma();
+			if (estimateGamma) {
+				gamma = estimateGamma();
+			}
 		}
 		if (asymptotic) {
 			TTestImpl test = new TTestImpl();

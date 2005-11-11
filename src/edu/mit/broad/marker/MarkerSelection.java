@@ -153,13 +153,13 @@ public class MarkerSelection {
 
 	private double gamma = 0;
 
-	private boolean estimateGamma = true;
+	private boolean estimateGamma = false;
 
 	/**
 	 * if <tt>true</tt> don't calculate fwer, maxT even when significance
 	 * booster is off
 	 */
-	private static boolean testGamma = false;
+	private static boolean testGamma = true; // FIXME
 
 	private int[] featureIndicesToPermute;
 
@@ -220,8 +220,10 @@ public class MarkerSelection {
 		this.significanceBooster = _removeFeatures;
 		this.theta = _theta;
 		this.smoothPValues = _smoothPValues;
-		this.gamma = _gamma;
-		this.estimateGamma = gamma < 0;
+		if (significanceBooster) {
+			this.gamma = _gamma;
+			this.estimateGamma = gamma < 0;
+		}
 
 		if (_complete && _removeFeatures) {
 			AnalysisUtil
@@ -394,7 +396,6 @@ public class MarkerSelection {
 				}
 			}
 		}
-		// MarkerSelection.testGamma = true; // FIXME
 		ClassVector classVector = AnalysisUtil.readClassVector(clsFile);
 		IExpressionDataReader reader = AnalysisUtil
 				.getExpressionReader(datasetFile);
@@ -582,7 +583,21 @@ public class MarkerSelection {
 			fwer = new double[numFeatures];
 		} else {
 			if (estimateGamma) {
-				gamma = estimateGamma();
+
+				// for(int k = 0; k < 200; k++) {
+				long start = System.currentTimeMillis();
+				for (int i = 0; i < 5; i++) {
+					gamma = estimateGamma(); // throw away
+				}
+				double[] gammas = new double[10];
+				for (int i = 0; i < 10; i++) {
+					gammas[i] = estimateGamma();
+				}
+				Arrays.sort(gammas);
+				gamma = (gammas[gammas.length / 2] + gammas[gammas.length / 2 - 1]) / 2.0;
+				long end = System.currentTimeMillis();
+				double t = (end - start)/1000.0;
+				System.out.println("Time to compute gamma=" + t);
 			}
 		}
 		if (asymptotic) {
@@ -1030,10 +1045,9 @@ public class MarkerSelection {
 					classVector.getIndices(1).length, seed);
 		}
 
-		int[] numGenesArray = { 1, 10, 50, 150, 200, 250, 300 };
-		int tries = 100; // num permuations to perform
+		int[] numGenesArray = { 1, 2, 3, 4, 5, 6, 7 };
+		int tries = 1000; // num permuations to perform
 		double[] times = new double[numGenesArray.length];
-		long estimateStart = System.currentTimeMillis();
 		for (int n = 0; n < numGenesArray.length; n++) {
 			int numGenes = numGenesArray[n];
 
@@ -1147,10 +1161,7 @@ public class MarkerSelection {
 		SimpleRegression regression = new SimpleRegression();
 		for (int i = 0; i < times.length; i++) {
 			regression.addData(numGenesArray[i], times[i]);
-			System.out.println(numGenesArray[i] + " " + times[i]);
 		}
-		long estimateEnd = System.currentTimeMillis();
-		System.out.println((estimateEnd - estimateStart));
 		double gamma = regression.getIntercept() / regression.getSlope();
 		if (gamma < 0) {
 			gamma = 0;

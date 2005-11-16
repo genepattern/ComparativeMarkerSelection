@@ -584,20 +584,23 @@ public class MarkerSelection {
 		} else {
 			if (estimateGamma) {
 
-				// for(int k = 0; k < 200; k++) {
 				long start = System.currentTimeMillis();
 				for (int i = 0; i < 5; i++) {
-					gamma = estimateGamma(); // throw away
+					gamma = estimateGamma2(); // throw away
 				}
-				double[] gammas = new double[10];
-				for (int i = 0; i < 10; i++) {
-					gammas[i] = estimateGamma();
+
+				int tries = 50;
+				double[] gammas = new double[tries];
+				for (int i = 0; i < tries; i++) {
+					gammas[i] = estimateGamma2();
 				}
+				//System.out.println(Util.toString(gammas));
 				Arrays.sort(gammas);
 				gamma = (gammas[gammas.length / 2] + gammas[gammas.length / 2 - 1]) / 2.0;
 				long end = System.currentTimeMillis();
-				double t = (end - start)/1000.0;
-				System.out.println("Time to compute gamma=" + t);
+				double t = (end - start) / 1000.0;
+
+				//System.out.println("Time to compute gamma=" + t);
 			}
 		}
 		if (asymptotic) {
@@ -1029,6 +1032,108 @@ public class MarkerSelection {
 		}
 	}
 
+	private final double estimateGamma2() {
+		Permuter permuter = null;
+		int[] classZeroIndices = classVector.getIndices(0);
+		int[] classOneIndices = classVector.getIndices(1);
+
+		if (permuter instanceof UnbalancedRandomCovariatePermuter) {
+			new UnbalancedRandomCovariatePermuter(classVector, covariate, seed);
+		} else if (permuter instanceof BalancedRandomPermuter) {
+			permuter = new BalancedRandomPermuter(classZeroIndices,
+					classOneIndices, seed);
+
+		} else {
+			permuter = new UnbalancedRandomPermuter(classVector.size(),
+					classVector.getIndices(1).length, seed);
+		}
+		long gammaStart = System.currentTimeMillis();
+
+		int[] permutedClassZeroIndices = null;
+		int[] permutedClassOneIndices = null;
+		int tries = 1000;
+		for (int test = 0; test < tries; test++) {
+			int[] permutedAssignments = permuter.next();
+
+			if (printPermutations) {
+				debugger.addAssignment(permutedAssignments);
+			}
+			java.util.List zeroIndices = new java.util.ArrayList();
+			java.util.List oneIndices = new java.util.ArrayList();
+			for (int i = 0, length = permutedAssignments.length; i < length; i++) {
+				if (permutedAssignments[i] == 0) {
+					zeroIndices.add(new Integer(i));
+				} else {
+					oneIndices.add(new Integer(i));
+				}
+			}
+
+			permutedClassZeroIndices = new int[zeroIndices.size()];
+			for (int i = 0, length = permutedClassZeroIndices.length; i < length; i++) {
+				permutedClassZeroIndices[i] = ((Integer) zeroIndices.get(i))
+						.intValue();
+			}
+
+			permutedClassOneIndices = new int[oneIndices.size()];
+			for (int i = 0, length = permutedClassOneIndices.length; i < length; i++) {
+				permutedClassOneIndices[i] = ((Integer) oneIndices.get(i))
+						.intValue();
+			}
+		}
+		long gammaEnd = System.currentTimeMillis();
+		double gammaElapsed = gammaEnd - gammaStart;
+
+		double[] dummyArray = new double[1];
+		int dummyInt = 0;
+		double[] dummyRow = (double[]) dataArray[0].clone();
+		double[][] dummyData = new double[1][];
+		dummyData[0] = dummyRow;
+
+		long permStart = System.currentTimeMillis();
+		int[] featureIndicesToPermute = { 0 };
+
+		for (int test = 0; test < tries; test++) {
+			// calculate time for 1 feature
+			statisticalMeasure.compute(dummyData, permutedClassZeroIndices,
+					permutedClassOneIndices, permutedScores,
+					featureIndicesToPermute, 1);
+			int index = featureIndicesToPermute != null ? featureIndicesToPermute[0]
+					: 0;
+			double score = scores[index];
+			if (testDirection == Constants.TWO_SIDED
+					|| testDirection == Constants.CLASS_ZERO_GREATER_THAN_CLASS_ONE) {
+				if (permutedScores[index] >= score) {
+					dummyArray[index] += 1.0;
+				}
+			} else {
+				if (permutedScores[index] <= score) {
+					dummyArray[index] += 1.0;
+				}
+			}
+
+			if (significanceBooster) {
+				dummyArray[index]++;
+				double k = dummyArray[index];
+				int N = (int) dummyArray[index];
+				if (testDirection == Constants.TWO_SIDED) {
+					k = Math.min(k, N - k);
+				}
+				double d = 2 * 1.96 * Math.sqrt((N + 1 - k)
+						/ ((N + 3) * (k + 1)));
+				if (d >= 0) { // theta include marker
+					dummyArray[0] = index;
+					dummyInt++;
+				}
+			}
+		}
+		long permEnd = System.currentTimeMillis();
+		double permElapsed = permEnd - permStart;
+		double permTimeForOne = permElapsed / tries;
+		double gammaTimeForOne = gammaElapsed / tries;
+		double gamma = gammaTimeForOne / permTimeForOne;
+		return gamma;
+	}
+
 	private final double estimateGamma() {
 		Permuter permuter = null;
 		int[] classZeroIndices = classVector.getIndices(0);
@@ -1045,7 +1150,7 @@ public class MarkerSelection {
 					classVector.getIndices(1).length, seed);
 		}
 
-		int[] numGenesArray = { 1, 2, 3, 4, 5, 6, 7 };
+		int[] numGenesArray = { 1, 2, 3, 4, 10, 20 };
 		int tries = 1000; // num permuations to perform
 		double[] times = new double[numGenesArray.length];
 		for (int n = 0; n < numGenesArray.length; n++) {
@@ -1160,8 +1265,10 @@ public class MarkerSelection {
 
 		SimpleRegression regression = new SimpleRegression();
 		for (int i = 0; i < times.length; i++) {
+			System.out.println(numGenesArray[i] + " " + times[i]);
 			regression.addData(numGenesArray[i], times[i]);
 		}
+		System.out.println();
 		double gamma = regression.getIntercept() / regression.getSlope();
 		if (gamma < 0) {
 			gamma = 0;

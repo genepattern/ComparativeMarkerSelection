@@ -44,7 +44,7 @@ public class MarkerSelection {
 	private static Debugger debugger;
 
 	/** input expression values */
-	private DoubleMatrix2D dataset;
+	private ExpressionData expressionData;
 
 	/** data array stored in <tt>dataset</tt> */
 	private double[][] dataArray;
@@ -159,7 +159,7 @@ public class MarkerSelection {
 	 * if <tt>true</tt> don't calculate fwer, maxT even when significance
 	 * booster is off
 	 */
-	private static boolean testGamma = true; // FIXME
+	private static boolean testGamma = false;
 
 	private int[] featureIndicesToPermute;
 
@@ -191,14 +191,14 @@ public class MarkerSelection {
 	 * @param _gamma
 	 *            if gamma >= 0 set gamma manually, otherwise estimate it
 	 */
-	public MarkerSelection(DoubleMatrix2D _dataset, String _datasetFile,
+	public MarkerSelection(ExpressionData _dataset, String _datasetFile,
 			ClassVector _classVector, String _clsFile, int _numPermutations,
 			int _side, String _outputFileName, boolean _balanced,
 			boolean _complete, int _metric, double _minStd, int _seed,
 			ClassVector _confoundingClassVector, String _confoundingClsFile,
 			boolean _removeFeatures, double _theta, boolean _smoothPValues,
 			double _gamma) {
-		this.dataset = _dataset;
+		this.expressionData = _dataset;
 		this.dataArray = _dataset.getArray();
 		this.datasetFile = _datasetFile;
 		this.classVector = _classVector;
@@ -240,7 +240,7 @@ public class MarkerSelection {
 			this.smoothPValues = true;
 		}
 
-		this.numFeatures = _dataset.getRowCount();
+		this.numFeatures = expressionData.getRowCount();
 
 		String permutationsFile = System
 				.getProperty("edu.mit.broad.marker.perm");
@@ -402,8 +402,6 @@ public class MarkerSelection {
 		ExpressionData expressionData = AnalysisUtil.readExpressionData(reader,
 				datasetFile);
 
-		DoubleMatrix2D dataset = expressionData.getExpressionMatrix();
-
 		ClassVector confoundingClassVector = null;
 		if (confoundingClsFile != null) {
 			confoundingClassVector = AnalysisUtil
@@ -437,8 +435,8 @@ public class MarkerSelection {
 						for (int k = 0; k < jIndices.length; k++) {
 							indices[k + iIndices.length] = jIndices[k];
 						}
-						DoubleMatrix2D pairwiseDataset = dataset.slice(null,
-								indices);
+						ExpressionData pairwiseDataset = expressionData.slice(
+								null, indices);
 						ClassVector pairwiseConfounder = null;
 						if (confoundingClassVector != null) {
 							pairwiseConfounder = confoundingClassVector
@@ -465,21 +463,21 @@ public class MarkerSelection {
 				for (int i = 0; i < classVector.getClassCount(); i++) {
 					String tempOutputFileName = baseOutputFileName + "."
 							+ classVector.getClassName(i) + ".vs.Rest.odf";
-					new MarkerSelection(dataset, datasetFile, oneVersusAll[i],
-							clsFile, _numPermutations, testDirection,
-							tempOutputFileName, balanced, complete, metric,
-							minStd, seed, confoundingClassVector,
-							confoundingClsFile, removeFeatures, theta,
-							smoothPValues, gamma);
+					new MarkerSelection(expressionData, datasetFile,
+							oneVersusAll[i], clsFile, _numPermutations,
+							testDirection, tempOutputFileName, balanced,
+							complete, metric, minStd, seed,
+							confoundingClassVector, confoundingClsFile,
+							removeFeatures, theta, smoothPValues, gamma);
 				}
 			}
 
 		} else {
-			new MarkerSelection(dataset, datasetFile, classVector, clsFile,
-					_numPermutations, testDirection, outputFileName, balanced,
-					complete, metric, minStd, seed, confoundingClassVector,
-					confoundingClsFile, removeFeatures, theta, smoothPValues,
-					gamma);
+			new MarkerSelection(expressionData, datasetFile, classVector,
+					clsFile, _numPermutations, testDirection, outputFileName,
+					balanced, complete, metric, minStd, seed,
+					confoundingClassVector, confoundingClsFile, removeFeatures,
+					theta, smoothPValues, gamma);
 		}
 	}
 
@@ -594,13 +592,12 @@ public class MarkerSelection {
 				for (int i = 0; i < tries; i++) {
 					gammas[i] = estimateGamma2();
 				}
-				//System.out.println(Util.toString(gammas));
+				// System.out.println(Util.toString(gammas));
 				Arrays.sort(gammas);
 				gamma = (gammas[gammas.length / 2] + gammas[gammas.length / 2 - 1]) / 2.0;
 				long end = System.currentTimeMillis();
 				double t = (end - start) / 1000.0;
-
-				//System.out.println("Time to compute gamma=" + t);
+				// System.out.println("Time to compute gamma=" + t);
 			}
 		}
 		if (asymptotic) {
@@ -625,20 +622,15 @@ public class MarkerSelection {
 				} catch (IllegalArgumentException e) {
 					AnalysisUtil
 							.exit("An error occurred while computing the p-value for "
-									+ dataset.getRowName(i));
+									+ expressionData.getRowName(i));
 				} catch (MathException e) {
 					AnalysisUtil
 							.exit("An error occurred while computing the p-value for "
-									+ dataset.getRowName(i));
+									+ expressionData.getRowName(i));
 				}
 			}
 		} else {
-			long start = System.currentTimeMillis();
 			permute();
-			long end = System.currentTimeMillis();
-			if (printStackTraces) {
-				System.out.println("elapsed " + (end - start));
-			}
 		}
 
 		// free temporary storage
@@ -877,38 +869,84 @@ public class MarkerSelection {
 		try {
 			String[] columnNames = null;
 			String[] columnTypes = null;
+			String[] rowDescriptions = expressionData.getRowDescriptions();
+
 			if (!significanceBooster) {
 				if (asymptotic) {
-					columnNames = new String[] { "Rank", "Feature", "Score",
-							"Feature P", "FDR(BH)", "Q Value", "Bonferroni",
-							"Fold Change" };
-					columnTypes = new String[] { "int", "String", "double",
-							"double", "double", "double", "double", "double" };
+					if (rowDescriptions != null) {
+						columnNames = new String[] { "Rank", "Feature",
+								"Description", "Score", "Feature P", "FDR(BH)",
+								"Q Value", "Bonferroni", "Fold Change" };
+						columnTypes = new String[] { "int", "String", "String",
+								"double", "double", "double", "double",
+								"double", "double" };
+					} else {
+						columnNames = new String[] { "Rank", "Feature",
+								"Score", "Feature P", "FDR(BH)", "Q Value",
+								"Bonferroni", "Fold Change" };
+						columnTypes = new String[] { "int", "String", "double",
+								"double", "double", "double", "double",
+								"double" };
+					}
 				} else if (complete) {
-					columnNames = new String[] { "Rank", "Feature", "Score",
-							"Feature P", "FDR(BH)", "Q Value", "Bonferroni",
-							"maxT", "FWER", "Fold Change" };
-					columnTypes = new String[] { "int", "String", "double",
-							"double", "double", "double", "double", "double",
-							"double", "double" };
+					if (rowDescriptions != null) {
+						columnNames = new String[] { "Rank", "Feature",
+								"Description", "Score", "Feature P", "FDR(BH)",
+								"Q Value", "Bonferroni", "maxT", "FWER",
+								"Fold Change" };
+						columnTypes = new String[] { "int", "String", "String",
+								"double", "double", "double", "double",
+								"double", "double", "double", "double" };
+					} else {
+						columnNames = new String[] { "Rank", "Feature",
+								"Score", "Feature P", "FDR(BH)", "Q Value",
+								"Bonferroni", "maxT", "FWER", "Fold Change" };
+						columnTypes = new String[] { "int", "String", "double",
+								"double", "double", "double", "double",
+								"double", "double", "double" };
+					}
 				} else {
-					columnNames = new String[] { "Rank", "Feature", "Score",
-							"Feature P", "Feature P Low", "Feature P High",
-							"FDR(BH)", "Q Value", "Bonferroni", "maxT", "FWER",
-							"Fold Change" };
-					columnTypes = new String[] { "int", "String", "double",
-							"double", "double", "double", "double", "double",
-							"double", "double", "double", "double" };
+					if (rowDescriptions != null) {
+						columnNames = new String[] { "Rank", "Feature",
+								"Description", "Score", "Feature P",
+								"Feature P Low", "Feature P High", "FDR(BH)",
+								"Q Value", "Bonferroni", "maxT", "FWER",
+								"Fold Change" };
+						columnTypes = new String[] { "int", "String", "String",
+								"double", "double", "double", "double",
+								"double", "double", "double", "double",
+								"double", "double" };
+					} else {
+						columnNames = new String[] { "Rank", "Feature",
+								"Score", "Feature P", "Feature P Low",
+								"Feature P High", "FDR(BH)", "Q Value",
+								"Bonferroni", "maxT", "FWER", "Fold Change" };
+						columnTypes = new String[] { "int", "String", "double",
+								"double", "double", "double", "double",
+								"double", "double", "double", "double",
+								"double" };
+					}
 				}
 
 			} else {
-				columnNames = new String[] { "Rank", "Feature", "Score",
-						"Feature P", "Feature P Low", "Feature P High",
-						"FDR(BH)", "Q Value", "Bonferroni", "Fold Change",
-						"Permutations", "Active" };
-				columnTypes = new String[] { "int", "String", "double",
-						"double", "double", "double", "double", "double",
-						"double", "double", "int", "boolean" };
+				if (rowDescriptions != null) {
+					columnNames = new String[] { "Rank", "Feature",
+							"Description", "Score", "Feature P",
+							"Feature P Low", "Feature P High", "FDR(BH)",
+							"Q Value", "Bonferroni", "Fold Change",
+							"Permutations", "Active" };
+					columnTypes = new String[] { "int", "String", "String",
+							"double", "double", "double", "double", "double",
+							"double", "double", "double", "int", "boolean" };
+				} else {
+					columnNames = new String[] { "Rank", "Feature", "Score",
+							"Feature P", "Feature P Low", "Feature P High",
+							"FDR(BH)", "Q Value", "Bonferroni", "Fold Change",
+							"Permutations", "Active" };
+					columnTypes = new String[] { "int", "String", "double",
+							"double", "double", "double", "double", "double",
+							"double", "double", "int", "boolean" };
+				}
 			}
 			pw = new OdfWriter(outputFileName, columnNames,
 					"Comparative Marker Selection", numFeatures, true);
@@ -976,8 +1014,16 @@ public class MarkerSelection {
 						* numFeatures, 1.0);
 				pw.print(rank);
 				pw.print("\t");
-				pw.print(dataset.getRowName(index));
+				pw.print(expressionData.getRowName(index));
 				pw.print("\t");
+				if (rowDescriptions != null) {
+					String s = rowDescriptions[index];
+					if (s == null) {
+						s = "";
+					}
+					pw.print(s);
+					pw.print("\t");
+				}
 				pw.print(scores[index]);
 				pw.print("\t");
 				pw.print(featureSpecificPValues[index]);
@@ -1450,7 +1496,7 @@ public class MarkerSelection {
 		try {
 			String s = testClassPermutationsReader.readLine();
 			StringTokenizer st = new StringTokenizer(s, " \t");
-			int cols = dataset.getColumnCount();
+			int cols = expressionData.getColumnCount();
 			int[] a = new int[cols];
 
 			for (int j = 0; j < cols; j++) {

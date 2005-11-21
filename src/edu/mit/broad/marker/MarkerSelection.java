@@ -852,10 +852,10 @@ public class MarkerSelection {
 			if (printStackTraces) {
 				ioe.printStackTrace();
 			}
-
-			AnalysisUtil
-					.exit("An error occurred while saving the output file.");
-
+			qvalueHeaders = new String[] {};
+			Arrays.fill(qvalues, "");
+			System.out
+					.println("An error occurred while computing the q-value-continuing anyway");
 		} finally {
 			if (br != null) {
 				try {
@@ -977,7 +977,7 @@ public class MarkerSelection {
 			pw.addHeader("Class 1", classVector.getClassName(1));
 			pw.addHeader("Test Statistic", statisticalMeasure.toString());
 
-			for (int i = 0; i < qvalueHeaderLines; i++) {
+			for (int i = 0; i < qvalueHeaders.length; i++) {
 				String[] tokens = qvalueHeaders[i].split("=");
 				pw.addHeader(tokens[0], tokens[1]);
 			}

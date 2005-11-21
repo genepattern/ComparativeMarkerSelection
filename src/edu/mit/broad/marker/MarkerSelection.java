@@ -15,7 +15,6 @@ import org.apache.commons.math.stat.inference.TTestImpl;
 import org.apache.commons.math.stat.regression.SimpleRegression;
 import org.genepattern.data.expr.ExpressionData;
 import org.genepattern.data.matrix.ClassVector;
-import org.genepattern.data.matrix.DoubleMatrix2D;
 import org.genepattern.io.OdfWriter;
 import org.genepattern.io.expr.IExpressionDataReader;
 import org.genepattern.ioutil.Util;
@@ -32,6 +31,7 @@ import edu.mit.broad.marker.permutation.Permuter;
 import edu.mit.broad.marker.permutation.UnbalancedCompletePermuter;
 import edu.mit.broad.marker.permutation.UnbalancedRandomCovariatePermuter;
 import edu.mit.broad.marker.permutation.UnbalancedRandomPermuter;
+import edu.mit.broad.marker.qvalue.QValue;
 
 /**
  * @author Joshua Gould
@@ -830,39 +830,45 @@ public class MarkerSelection {
 			}
 		}
 
-		edu.mit.broad.marker.qvalue.QValue.qvalue(tempFileName,
+		boolean qvalueSuccess = QValue.qvalue(tempFileName,
 				printStackTraces);
 		String[] qvalues = new String[numFeatures];
 		int qvalueHeaderLines = 4;
 		String[] qvalueHeaders = new String[qvalueHeaderLines];
 		BufferedReader br = null;
-		String qvalueOutputFileName = "qvalues.txt"; // produced by R code
+		File qvalueOutputFile = new File("qvalues.txt"); // produced by R code
 		// above
-		new File(qvalueOutputFileName).deleteOnExit();
-
-		try {// read in results from qvalue
-			br = new BufferedReader(new FileReader(qvalueOutputFileName));
-			for (int i = 0; i < qvalueHeaderLines; i++) {
-				qvalueHeaders[i] = br.readLine();
-			}
-			for (int i = 0; i < numFeatures; i++) {
-				qvalues[i] = br.readLine();
-			}
-		} catch (IOException ioe) {
-			if (printStackTraces) {
-				ioe.printStackTrace();
-			}
-			qvalueHeaders = new String[] {};
-			Arrays.fill(qvalues, "");
-			System.out
-					.println("An error occurred while computing the q-value-continuing anyway");
-		} finally {
-			if (br != null) {
-				try {
-					br.close();
-				} catch (IOException x) {
+		
+		
+		if (qvalueOutputFile.exists()) {
+			qvalueOutputFile.deleteOnExit();
+			try {// read in results from qvalue
+				br = new BufferedReader(new FileReader(qvalueOutputFile));
+				for (int i = 0; i < qvalueHeaderLines; i++) {
+					qvalueHeaders[i] = br.readLine();
+				}
+				for (int i = 0; i < numFeatures; i++) {
+					qvalues[i] = br.readLine();
+				}
+			} catch (IOException ioe) {
+				if (printStackTraces) {
+					ioe.printStackTrace();
+				}
+				qvalueHeaders = new String[] {};
+				Arrays.fill(qvalues, "NaN");
+				System.err
+						.println("An error occurred while computing the q-value-continuing anyway");
+			} finally {
+				if (br != null) {
+					try {
+						br.close();
+					} catch (IOException x) {
+					}
 				}
 			}
+		} else {
+			qvalueHeaders = new String[] {};
+			Arrays.fill(qvalues, "NaN");
 		}
 
 		OdfWriter pw = null;

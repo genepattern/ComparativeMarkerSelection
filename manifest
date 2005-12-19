@@ -1,6 +1,8 @@
 #Wed Oct 12 11:16:38 EDT 2005
 author=Joshua Gould, Gad Getz, Stefano Monti
-commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> <significance.booster> <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -t<theta> -p<phenotype.test>
+commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -p<phenotype.test>
+
+# -t<theta>
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q-Value, maxT, FWER, Feature-Specific P-Value, and Bonferroni.
 fileFormat=Comparative Marker Selection
@@ -120,6 +122,14 @@ p12_prefix_when_specified=
 p12_type=java.lang.String
 p12_value=one versus all;all pairs
 
+p13_default_value=<input.filename_basename>.comp.marker.odf
+p13_description=The name of the output file
+p13_name=output.file
+p13_optional=
+p13_prefix_when_specified=
+p13_type=java.lang.String
+p13_value=
+
 #p12_default_value=false
 #p12_description=Whether to attempt to increase the p-value accuracy for significant features
 #p12_name=significance.booster
@@ -143,13 +153,4 @@ p12_value=one versus all;all pairs
 #p15_prefix_when_specified=
 #p15_type=java.lang.Float
 #p15_value=
-
-p16_default_value=<input.filename_basename>.comp.marker.odf
-p13_description=The name of the output file
-p13_name=output.file
-p13_optional=
-p13_prefix_when_specified=
-p13_type=java.lang.String
-p13_value=
-
 

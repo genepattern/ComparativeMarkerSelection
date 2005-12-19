@@ -112,29 +112,29 @@ p11_prefix_when_specified=
 p11_type=java.lang.String
 p11_value=true\=yes;false\=no
 
-p12_default_value=false
-p12_description=Whether to attempt to increase the p-value accuracy for significant features
-p12_name=significance.booster
+p12_default_value=one versus all
+p12_description=Tests to perform when cls file has more than two classes (Note: not fully corrected for multiple hypothesis testing)
+p12_name=phenotype.test
 p12_optional=on
 p12_prefix_when_specified=
 p12_type=java.lang.String
-p12_value=true\=yes;false\=no
+p12_value=one versus all;all pairs
 
-p13_default_value=0.70
-p13_description=Value for removing features when using significance booster
-p13_name=theta
-p13_optional=on
-p13_prefix_when_specified=
-p13_type=java.lang.Float
-p13_value=
+#p12_default_value=false
+#p12_description=Whether to attempt to increase the p-value accuracy for significant features
+#p12_name=significance.booster
+#p12_optional=on
+#p12_prefix_when_specified=
+#p12_type=java.lang.String
+#p12_value=true\=yes;false\=no
 
-p14_default_value=one versus all
-p14_description=Tests to perform when cls file has more than two classes (Note: not fully corrected for multiple hypothesis testing)
-p14_name=phenotype.test
-p14_optional=on
-p14_prefix_when_specified=
-p14_type=java.lang.String
-p14_value=one versus all;all pairs
+#p13_default_value=0.70
+#p13_description=Value for removing features when using attempting to increase p-value accuracy
+#p13_name=theta
+#p13_optional=on
+#p13_prefix_when_specified=
+#p13_type=java.lang.Float
+#p13_value=
 
 #p15_default_value=
 #p15_description=Value for gamma when using significance booster (leave blank to estimate gamma)
@@ -145,11 +145,11 @@ p14_value=one versus all;all pairs
 #p15_value=
 
 p16_default_value=<input.filename_basename>.comp.marker.odf
-p16_description=The name of the output file
-p16_name=output.file
-p16_optional=
-p16_prefix_when_specified=
-p16_type=java.lang.String
-p16_value=
+p13_description=The name of the output file
+p13_name=output.file
+p13_optional=
+p13_prefix_when_specified=
+p13_type=java.lang.String
+p13_value=
 
 

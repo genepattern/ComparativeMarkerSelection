@@ -1,15 +1,14 @@
 /*
-  The Broad Institute
-  SOFTWARE COPYRIGHT NOTICE AGREEMENT
-  This software and its documentation are copyright (2003-2006) by the
-  Broad Institute/Massachusetts Institute of Technology. All rights are
-  reserved.
+ The Broad Institute
+ SOFTWARE COPYRIGHT NOTICE AGREEMENT
+ This software and its documentation are copyright (2003-2006) by the
+ Broad Institute/Massachusetts Institute of Technology. All rights are
+ reserved.
 
-  This software is supplied without any warranty or guaranteed support
-  whatsoever. Neither the Broad Institute nor MIT can be responsible for its
-  use, misuse, or functionality.
-*/
-
+ This software is supplied without any warranty or guaranteed support
+ whatsoever. Neither the Broad Institute nor MIT can be responsible for its
+ use, misuse, or functionality.
+ */
 
 package edu.mit.broad.marker;
 
@@ -736,9 +735,9 @@ public class MarkerSelection {
 
 					if (k == 0) {
 						plow = 0;
-						phigh = betaDist.inverse(0.05);
+						phigh = betaDist.inverse(0.95);
 					} else if (k == N) {
-						plow = betaDist.inverse(0.95);
+						plow = betaDist.inverse(0.05);
 						phigh = 1;
 					} else if (k < (N / 2)) {
 						double accuracy = Math.min(p / 1000, 0.000001);
@@ -843,16 +842,15 @@ public class MarkerSelection {
 			}
 		}
 
-		boolean qvalueSuccess = QValue.qvalue(tempFileName,
-				printStackTraces);
+		boolean qvalueSuccess = QValue.qvalue(tempFileName, printStackTraces);
 		String[] qvalues = new String[numFeatures];
 		int qvalueHeaderLines = 4;
 		String[] qvalueHeaders = new String[qvalueHeaderLines];
 		BufferedReader br = null;
-		File qvalueOutputFile = new File("qvalues.txt"); // produced by R code
+		File qvalueOutputFile = new File("qvalues.txt"); // produced by R
+															// code
 		// above
-		
-		
+
 		if (qvalueOutputFile.exists()) {
 			qvalueOutputFile.deleteOnExit();
 			try {// read in results from qvalue

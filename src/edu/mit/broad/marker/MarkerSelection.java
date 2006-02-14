@@ -149,7 +149,7 @@ public class MarkerSelection {
 	private double[] upperBound;
 
 	/** Whether to try to trim the number of features to permute */
-	private boolean significanceBooster;
+	private boolean significanceBooster = false;
 
 	/** Keeps track of number of permutations performed per feature */
 	private int[] permutationsPerFeature;
@@ -664,10 +664,27 @@ public class MarkerSelection {
 				meanClassOne += row[classOneIndices[j]];
 			}
 			meanClassOne = meanClassOne / classOneIndices.length;
-			if (meanClassOne == 0) {
-				meanClassOne = 0.01;
+
+			double numerator;
+			double denominator;
+			if (meanClassZero == meanClassOne) {
+				numerator = 1;
+				denominator = 1;
+			} else if (meanClassZero > meanClassOne) {
+				numerator = meanClassZero;
+				denominator = meanClassOne;
+				if (denominator == 0) {
+					denominator = 0.01;
+				}
+			} else {
+				numerator = meanClassOne;
+				denominator = meanClassZero;
+				if (denominator == 0) {
+					denominator = 0.01;
+				}
 			}
-			foldChange[i] = meanClassZero / meanClassOne;
+
+			foldChange[i] = numerator / denominator;
 		}
 		if (!asymptotic) {
 			for (int i = 0; i < numFeatures; i++) {
@@ -848,7 +865,7 @@ public class MarkerSelection {
 		String[] qvalueHeaders = new String[qvalueHeaderLines];
 		BufferedReader br = null;
 		File qvalueOutputFile = new File("qvalues.txt"); // produced by R
-															// code
+		// code
 		// above
 
 		if (qvalueOutputFile.exists()) {

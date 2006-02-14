@@ -363,7 +363,7 @@ public class MarkerSelection {
 		String confoundingClsFile = null;
 		double theta = -1;
 		boolean performAllPairs = true;
-		double gamma = -1;
+		double gamma = 0;
 
 		for (int i = 12; i < args.length; i++) {
 			String arg = args[i].substring(0, 2);
@@ -1358,8 +1358,15 @@ public class MarkerSelection {
 
 	private final void permute() {
 		BigDecimal maxLong = BigDecimal.valueOf(Long.MAX_VALUE);
-		BigDecimal bigIntBank = new BigDecimal(numFeatures + gamma)
-				.multiply(BigDecimal.valueOf(numPermutations));
+		BigDecimal bigIntBank;
+		if (significanceBooster) {
+			bigIntBank = new BigDecimal(numFeatures + gamma)
+					.multiply(BigDecimal.valueOf(numPermutations));
+		} else {
+			bigIntBank = new BigDecimal(numFeatures).multiply(BigDecimal
+					.valueOf(numPermutations));
+		}
+
 		if (bigIntBank.compareTo(maxLong) > 0) {
 			AnalysisUtil
 					.exit("Arithmetic overflow. Try decreasing the number of permutations.");
@@ -1475,7 +1482,7 @@ public class MarkerSelection {
 			 * if(permutedScores[i] <= score) { rankBasedPValues[i] += 1.0; } } }
 			 */
 
-			if (!testGamma && !significanceBooster) {
+			if (!significanceBooster) {
 				for (int i = 0; i < numFeatures; i++) {
 					permutedScores[i] = Math.abs(permutedScores[i]);
 					monotonicPermutedScores[i] = permutedScores[i];

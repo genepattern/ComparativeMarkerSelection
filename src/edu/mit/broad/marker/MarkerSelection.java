@@ -650,6 +650,11 @@ public class MarkerSelection {
 		absoluteScores = null;
 		permutedScores = null;
 
+		double[] classZeroMean = new double[numFeatures];
+		double[] classOneMean = new double[numFeatures];
+		double[] classZeroStd = new double[numFeatures];
+		double[] classOneStd = new double[numFeatures];
+
 		double[] foldChange = new double[numFeatures];
 		for (int i = 0; i < numFeatures; i++) {
 			double meanClassZero = 0;
@@ -658,13 +663,18 @@ public class MarkerSelection {
 				meanClassZero += row[classZeroIndices[j]];
 			}
 			meanClassZero = meanClassZero / classZeroIndices.length;
+			classZeroMean[i] = meanClassZero;
+			classZeroStd[i] = org.genepattern.stats.Util.standardDeviation(
+					dataArray, classZeroIndices, i, meanClassZero);
 
 			double meanClassOne = 0;
 			for (int j = 0, length = classOneIndices.length; j < length; j++) {
 				meanClassOne += row[classOneIndices[j]];
 			}
 			meanClassOne = meanClassOne / classOneIndices.length;
-
+			classOneStd[i] = org.genepattern.stats.Util.standardDeviation(
+					dataArray, classOneIndices, i, meanClassOne);
+			classOneMean[i] = meanClassOne;
 			double numerator;
 			double denominator;
 			if (meanClassZero == meanClassOne) {
@@ -904,21 +914,29 @@ public class MarkerSelection {
 			String[] columnNames = null;
 			String[] columnTypes = null;
 			String[] rowDescriptions = expressionData.getRowDescriptions();
+			String classZero = classVector.getClassName(0);
+			String classOne = classVector.getClassName(1);
 
 			if (!significanceBooster) {
 				if (asymptotic) {
 					if (rowDescriptions != null) {
 						columnNames = new String[] { "Rank", "Feature",
 								"Description", "Score", "Feature P", "FDR(BH)",
-								"Q Value", "Bonferroni", "Fold Change" };
+								"Q Value", "Bonferroni", "Fold Change",
+								classZero + " Mean", classZero + " Std",
+								classOne + " Mean", classOne + " Std" };
 						columnTypes = new String[] { "int", "String", "String",
+								"double", "double", "double", "double",
 								"double", "double", "double", "double",
 								"double", "double" };
 					} else {
 						columnNames = new String[] { "Rank", "Feature",
 								"Score", "Feature P", "FDR(BH)", "Q Value",
-								"Bonferroni", "Fold Change" };
+								"Bonferroni", "Fold Change",
+								classZero + " Mean", classZero + " Std",
+								classOne + " Mean", classOne + " Std" };
 						columnTypes = new String[] { "int", "String", "double",
+								"double", "double", "double", "double",
 								"double", "double", "double", "double",
 								"double" };
 					}
@@ -927,15 +945,21 @@ public class MarkerSelection {
 						columnNames = new String[] { "Rank", "Feature",
 								"Description", "Score", "Feature P", "FDR(BH)",
 								"Q Value", "Bonferroni", "maxT", "FWER",
-								"Fold Change" };
+								"Fold Change", classZero + " Mean",
+								classZero + " Std", classOne + " Mean",
+								classOne + " Std" };
 						columnTypes = new String[] { "int", "String", "String",
+								"double", "double", "double", "double",
 								"double", "double", "double", "double",
 								"double", "double", "double", "double" };
 					} else {
 						columnNames = new String[] { "Rank", "Feature",
 								"Score", "Feature P", "FDR(BH)", "Q Value",
-								"Bonferroni", "maxT", "FWER", "Fold Change" };
+								"Bonferroni", "maxT", "FWER", "Fold Change",
+								classZero + " Mean", classZero + " Std",
+								classOne + " Mean", classOne + " Std" };
 						columnTypes = new String[] { "int", "String", "double",
+								"double", "double", "double", "double",
 								"double", "double", "double", "double",
 								"double", "double", "double" };
 					}
@@ -945,8 +969,11 @@ public class MarkerSelection {
 								"Description", "Score", "Feature P",
 								"Feature P Low", "Feature P High", "FDR(BH)",
 								"Q Value", "Bonferroni", "maxT", "FWER",
-								"Fold Change" };
+								"Fold Change", classZero + " Mean",
+								classZero + " Std", classOne + " Mean",
+								classOne + " Std" };
 						columnTypes = new String[] { "int", "String", "String",
+								"double", "double", "double", "double",
 								"double", "double", "double", "double",
 								"double", "double", "double", "double",
 								"double", "double" };
@@ -954,8 +981,11 @@ public class MarkerSelection {
 						columnNames = new String[] { "Rank", "Feature",
 								"Score", "Feature P", "Feature P Low",
 								"Feature P High", "FDR(BH)", "Q Value",
-								"Bonferroni", "maxT", "FWER", "Fold Change" };
+								"Bonferroni", "maxT", "FWER", "Fold Change",
+								classZero + " Mean", classZero + " Std",
+								classOne + " Mean", classOne + " Std" };
 						columnTypes = new String[] { "int", "String", "double",
+								"double", "double", "double", "double",
 								"double", "double", "double", "double",
 								"double", "double", "double", "double",
 								"double" };
@@ -968,18 +998,23 @@ public class MarkerSelection {
 							"Description", "Score", "Feature P",
 							"Feature P Low", "Feature P High", "FDR(BH)",
 							"Q Value", "Bonferroni", "Fold Change",
-							"Permutations", "Active" };
+							classZero + " Mean", " Std", classOne + " Mean",
+							classOne + " Std", "Permutations", "Active" };
 					columnTypes = new String[] { "int", "String", "String",
 							"double", "double", "double", "double", "double",
-							"double", "double", "double", "int", "boolean" };
+							"double", "double", "double", "double", "double",
+							"double", "double", "int", "boolean" };
 				} else {
 					columnNames = new String[] { "Rank", "Feature", "Score",
 							"Feature P", "Feature P Low", "Feature P High",
 							"FDR(BH)", "Q Value", "Bonferroni", "Fold Change",
+							classZero + " Mean", classZero + " Std",
+							classOne + " Mean", classOne + " Std",
 							"Permutations", "Active" };
 					columnTypes = new String[] { "int", "String", "double",
 							"double", "double", "double", "double", "double",
-							"double", "double", "int", "boolean" };
+							"double", "double", "double", "double", "double",
+							"double", "int", "boolean" };
 				}
 			}
 			pw = new OdfWriter(outputFileName, columnNames,
@@ -1082,6 +1117,16 @@ public class MarkerSelection {
 
 				pw.print("\t");
 				pw.print(foldChange[index]);
+
+				pw.print("\t");
+				pw.print(classZeroMean[index]);
+				pw.print("\t");
+				pw.print(classZeroStd[index]);
+
+				pw.print("\t");
+				pw.print(classOneMean[index]);
+				pw.print("\t");
+				pw.print(classOneStd[index]);
 
 				if (significanceBooster) {
 					pw.print("\t");

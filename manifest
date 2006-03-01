@@ -15,7 +15,7 @@ publicationDate=10/12/2005 11\:16
 quality=production
 taskType=Gene List Selection
 userid=GenePattern
-version=Added significance booster option
+version=Added additional metrics
 
 p1_default_value=
 p1_description=The input file - .res, .gct, .odf type\=Dataset

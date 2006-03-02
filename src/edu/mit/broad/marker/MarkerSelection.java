@@ -696,12 +696,14 @@ public class MarkerSelection {
 
 			foldChange[i] = numerator / denominator;
 		}
+		int[] kArray = new int[numFeatures];
 		if (!asymptotic) {
 			for (int i = 0; i < numFeatures; i++) {
 				// fpr[i] /= numFeatures;
 				// fpr[i] /= numPermutations;
 				int N = permutationsPerFeature[i];
 				double k = featureSpecificPValues[i];
+				kArray[i] = (int) k;
 				double p;
 				if (smoothPValues) {
 					p = (k + 1) / (N + 2);
@@ -947,21 +949,21 @@ public class MarkerSelection {
 								"Q Value", "Bonferroni", "maxT", "FWER",
 								"Fold Change", classZero + " Mean",
 								classZero + " Std", classOne + " Mean",
-								classOne + " Std" };
+								classOne + " Std", "k" };
 						columnTypes = new String[] { "int", "String", "String",
 								"double", "double", "double", "double",
 								"double", "double", "double", "double",
-								"double", "double", "double", "double" };
+								"double", "double", "double", "double", "int" };
 					} else {
 						columnNames = new String[] { "Rank", "Feature",
 								"Score", "Feature P", "FDR(BH)", "Q Value",
 								"Bonferroni", "maxT", "FWER", "Fold Change",
 								classZero + " Mean", classZero + " Std",
-								classOne + " Mean", classOne + " Std" };
+								classOne + " Mean", classOne + " Std", "k" };
 						columnTypes = new String[] { "int", "String", "double",
 								"double", "double", "double", "double",
 								"double", "double", "double", "double",
-								"double", "double", "double" };
+								"double", "double", "double", "int" };
 					}
 				} else {
 					if (rowDescriptions != null) {
@@ -971,24 +973,24 @@ public class MarkerSelection {
 								"Q Value", "Bonferroni", "maxT", "FWER",
 								"Fold Change", classZero + " Mean",
 								classZero + " Std", classOne + " Mean",
-								classOne + " Std" };
+								classOne + " Std", "k" };
 						columnTypes = new String[] { "int", "String", "String",
 								"double", "double", "double", "double",
 								"double", "double", "double", "double",
 								"double", "double", "double", "double",
-								"double", "double" };
+								"double", "double", "int" };
 					} else {
 						columnNames = new String[] { "Rank", "Feature",
 								"Score", "Feature P", "Feature P Low",
 								"Feature P High", "FDR(BH)", "Q Value",
 								"Bonferroni", "maxT", "FWER", "Fold Change",
 								classZero + " Mean", classZero + " Std",
-								classOne + " Mean", classOne + " Std" };
+								classOne + " Mean", classOne + " Std", "k" };
 						columnTypes = new String[] { "int", "String", "double",
 								"double", "double", "double", "double",
 								"double", "double", "double", "double",
 								"double", "double", "double", "double",
-								"double" };
+								"double", "int" };
 					}
 				}
 
@@ -999,22 +1001,22 @@ public class MarkerSelection {
 							"Feature P Low", "Feature P High", "FDR(BH)",
 							"Q Value", "Bonferroni", "Fold Change",
 							classZero + " Mean", " Std", classOne + " Mean",
-							classOne + " Std", "Permutations", "Active" };
+							classOne + " Std", "Permutations", "Active", "k" };
 					columnTypes = new String[] { "int", "String", "String",
 							"double", "double", "double", "double", "double",
 							"double", "double", "double", "double", "double",
-							"double", "double", "int", "boolean" };
+							"double", "double", "int", "boolean", "int" };
 				} else {
 					columnNames = new String[] { "Rank", "Feature", "Score",
 							"Feature P", "Feature P Low", "Feature P High",
 							"FDR(BH)", "Q Value", "Bonferroni", "Fold Change",
 							classZero + " Mean", classZero + " Std",
 							classOne + " Mean", classOne + " Std",
-							"Permutations", "Active" };
+							"Permutations", "Active", "k" };
 					columnTypes = new String[] { "int", "String", "double",
 							"double", "double", "double", "double", "double",
 							"double", "double", "double", "double", "double",
-							"double", "int", "boolean" };
+							"double", "int", "boolean", "int" };
 				}
 			}
 			pw = new OdfWriter(outputFileName, columnNames,
@@ -1027,7 +1029,7 @@ public class MarkerSelection {
 						.getFileName(confoundingClsFile));
 			}
 
-			if (!asymptotic) {
+			if (!asymptotic && !significanceBooster) {
 				pw.addHeader("Permutations", numPermutations);
 			}
 
@@ -1054,10 +1056,10 @@ public class MarkerSelection {
 				pw.addHeader("Random Seed", seed);
 			}
 
-			if (!asymptotic) {
-				pw.addHeader("Significance Booster", String
-						.valueOf(significanceBooster));
-			}
+			// if (!asymptotic) {
+			// pw.addHeader("Significance Booster", String
+			// .valueOf(significanceBooster));
+			// }
 			boolean[] active = null;
 			if (significanceBooster) {
 				pw.addHeader("Theta", theta);
@@ -1133,6 +1135,10 @@ public class MarkerSelection {
 					pw.print(permutationsPerFeature[index]);
 					pw.print("\t");
 					pw.print(active[index] ? "true" : "false");
+				}
+				if (!asymptotic) {
+					pw.print("\t");
+					pw.print(kArray[index]);
 				}
 				pw.println();
 			}

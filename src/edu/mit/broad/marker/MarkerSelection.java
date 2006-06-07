@@ -29,7 +29,7 @@ import org.genepattern.data.expr.ExpressionData;
 import org.genepattern.data.matrix.ClassVector;
 import org.genepattern.io.OdfWriter;
 import org.genepattern.io.Util;
-import org.genepattern.io.expr.IExpressionDataReader;
+import org.genepattern.io.expr.IExpressionDataParser;
 import org.genepattern.module.AnalysisUtil;
 import org.genepattern.stats.Function;
 import org.genepattern.stats.ITestStatistic;
@@ -409,7 +409,7 @@ public class MarkerSelection {
 			}
 		}
 		ClassVector classVector = AnalysisUtil.readClassVector(clsFile);
-		IExpressionDataReader reader = AnalysisUtil
+		IExpressionDataParser reader = AnalysisUtil
 				.getExpressionReader(datasetFile);
 		ExpressionData expressionData = AnalysisUtil.readExpressionData(reader,
 				datasetFile);

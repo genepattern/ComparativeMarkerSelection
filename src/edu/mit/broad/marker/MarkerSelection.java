@@ -410,7 +410,7 @@ public class MarkerSelection {
 		}
 		ClassVector classVector = AnalysisUtil.readClassVector(clsFile);
 		IExpressionDataParser reader = AnalysisUtil
-				.getExpressionReader(datasetFile);
+				.getExpressionDataParser(datasetFile);
 		ExpressionData expressionData = AnalysisUtil.readExpressionData(reader,
 				datasetFile);
 

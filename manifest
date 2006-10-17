@@ -1,6 +1,6 @@
 #Wed Oct 12 11:16:38 EDT 2005
 author=Joshua Gould, Gad Getz, Stefano Monti
-commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar<path.separator><libdir>MarkerSelection.jar edu.mit.broad.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -p<phenotype.test>
+commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar org.genepattern.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -p<phenotype.test>
 
 # -t<theta>
 cpuType=any

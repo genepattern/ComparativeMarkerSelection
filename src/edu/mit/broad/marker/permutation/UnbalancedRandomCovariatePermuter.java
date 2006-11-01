@@ -13,9 +13,8 @@
 
 package edu.mit.broad.marker.permutation;
 import java.util.Arrays;
-import java.util.HashMap;
 
-import org.genepattern.data.matrix.ClassVector;
+import org.genepattern.matrix.ClassVectorImpl;
 
 /**
  *  Permuter using covariates
@@ -26,11 +25,11 @@ public class UnbalancedRandomCovariatePermuter implements Permuter {
    cern.jet.random.engine.MersenneTwister random;
    long[] values;
    int[] classOneIndices;
-   ClassVector covariate;
+   ClassVectorImpl covariate;
    int[] choose;
    int size;
    
-   public UnbalancedRandomCovariatePermuter(ClassVector classVector, ClassVector covariate, int seed) {
+   public UnbalancedRandomCovariatePermuter(ClassVectorImpl classVector, ClassVectorImpl covariate, int seed) {
       this.random = new cern.jet.random.engine.MersenneTwister(seed);
       this.covariate = covariate;
       this.classOneIndices = classVector.getIndices(1);

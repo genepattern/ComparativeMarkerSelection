@@ -12,25 +12,41 @@
 
 package edu.mit.broad.marker;
 
-import JSci.maths.statistics.BetaDistribution;
-import edu.mit.broad.marker.permutation.*;
-import edu.mit.broad.marker.qvalue.QValue;
-import org.apache.commons.math.MathException;
-import org.apache.commons.math.stat.inference.TTestImpl;
-import org.apache.commons.math.stat.regression.SimpleRegression;
-import org.genepattern.data.expr.ExpressionData;
-import org.genepattern.data.matrix.ClassVector;
-import org.genepattern.io.OdfWriter;
-import org.genepattern.io.Util;
-import org.genepattern.io.expr.IExpressionDataParser;
-import org.genepattern.module.AnalysisUtil;
-import org.genepattern.stats.*;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.StringTokenizer;
+
+import org.apache.commons.math.MathException;
+import org.apache.commons.math.stat.inference.TTestImpl;
+import org.apache.commons.math.stat.regression.SimpleRegression;
+import org.genepattern.io.DatasetParser;
+import org.genepattern.io.OdfWriter;
+import org.genepattern.io.Util;
+import org.genepattern.io.expr.IExpressionDataParser;
+import org.genepattern.matrix.ClassVectorImpl;
+import org.genepattern.matrix.DatasetImpl;
+import org.genepattern.module.AnalysisUtil;
+import org.genepattern.stats.Function;
+import org.genepattern.stats.Sorting;
+import org.genepattern.stats.TestStatistic;
+import org.genepattern.stats.TestStatistics;
+import org.genepattern.stats.ZeroFinder;
+
+import JSci.maths.statistics.BetaDistribution;
+import edu.mit.broad.marker.permutation.BalancedCompletePermuter;
+import edu.mit.broad.marker.permutation.BalancedRandomPermuter;
+import edu.mit.broad.marker.permutation.Permuter;
+import edu.mit.broad.marker.permutation.UnbalancedCompletePermuter;
+import edu.mit.broad.marker.permutation.UnbalancedRandomCovariatePermuter;
+import edu.mit.broad.marker.permutation.UnbalancedRandomPermuter;
+import edu.mit.broad.marker.qvalue.QValue;
 
 /**
  * @author Joshua Gould
@@ -45,7 +61,7 @@ public class MarkerSelection {
     /**
      * input expression values
      */
-    private ExpressionData expressionData;
+    private DatasetImpl expressionData;
 
     /**
      * data array stored in <tt>dataset</tt>
@@ -55,7 +71,7 @@ public class MarkerSelection {
     /**
      * input classes
      */
-    private ClassVector classVector;
+    private ClassVectorImpl classVector;
 
     /**
      * total number of permutations to perform
@@ -110,7 +126,7 @@ public class MarkerSelection {
      */
     private int numFeatures;
 
-    private ITestStatistic statisticalMeasure;
+    private TestStatistic statisticalMeasure;
 
     /**
      * Input dataset file name
@@ -130,7 +146,7 @@ public class MarkerSelection {
     /**
      * Covariate assignments
      */
-    private ClassVector covariate;
+    private ClassVectorImpl covariate;
 
     /**
      * Seed for generating permutations
@@ -251,10 +267,10 @@ public class MarkerSelection {
      * @param _smoothPValues
      * @param _gamma                  if gamma >= 0 set gamma manually, otherwise estimate it
      */
-    public MarkerSelection(ExpressionData _dataset, String _datasetFile, ClassVector _classVector, String _clsFile,
+    public MarkerSelection(DatasetImpl _dataset, String _datasetFile, ClassVectorImpl _classVector, String _clsFile,
                            int _numPermutations, int _side, String _outputFileName, boolean _balanced,
                            boolean _complete, int _metric, double _minStd, int _seed,
-                           ClassVector _confoundingClassVector, String _confoundingClsFile, boolean _removeFeatures,
+                           ClassVectorImpl _confoundingClassVector, String _confoundingClsFile, boolean _removeFeatures,
                            double _theta, boolean _smoothPValues, double _gamma) {
         this.expressionData = _dataset;
         this.dataArray = _dataset.getArray();
@@ -454,17 +470,17 @@ public class MarkerSelection {
                 }
             }
         }
-        ClassVector classVector = AnalysisUtil.readClassVector(clsFile);
-        IExpressionDataParser reader = AnalysisUtil
-                .getExpressionDataParser(datasetFile);
-        ExpressionData expressionData = AnalysisUtil.readExpressionData(reader, datasetFile);
+        ClassVectorImpl classVector = AnalysisUtil.readClassVector(clsFile);
+        DatasetParser reader = AnalysisUtil
+                .getDatasetParser(datasetFile);
+        DatasetImpl expressionData = AnalysisUtil.readDataset(reader, datasetFile);
 
-        ClassVector confoundingClassVector = null;
+        ClassVectorImpl confoundingClassVector = null;
         if (confoundingClsFile != null) {
             confoundingClassVector = AnalysisUtil
                     .readClassVector(confoundingClsFile);
             /*
-                * ClassVector[] cv = new
+                * ClassVectorImpl[] cv = new
                 * edu.mit.broad.internal.MultiClassReader().read(clsFile,
                 * expressionData); this.classVector = cv[0]; if(cv.length > 1) {
                 * covariate = cv[1]; for(int i = 2; i < cv.length; i++) { covariate =
@@ -474,7 +490,7 @@ public class MarkerSelection {
 
         if (classVector.getClassCount() > 2) {
             if (performAllPairs) {
-                ClassVector[] allPairs = classVector.getAllPairs();
+                ClassVectorImpl[] allPairs = classVector.getAllPairs();
 
                 String baseOutputFileName = Util
                         .getBaseFileName(outputFileName);
@@ -491,8 +507,8 @@ public class MarkerSelection {
                         for (int k = 0; k < jIndices.length; k++) {
                             indices[k + iIndices.length] = jIndices[k];
                         }
-                        ExpressionData pairwiseDataset = expressionData.slice(null, indices);
-                        ClassVector pairwiseConfounder = null;
+                        DatasetImpl pairwiseDataset = expressionData.slice(null, indices);
+                        ClassVectorImpl pairwiseConfounder = null;
                         if (confoundingClassVector != null) {
                             pairwiseConfounder = confoundingClassVector
                                     .slice(indices);
@@ -508,7 +524,7 @@ public class MarkerSelection {
                 }
 
             } else {
-                ClassVector[] oneVersusAll = classVector.getOneVersusAll();
+                ClassVectorImpl[] oneVersusAll = classVector.getOneVersusAll();
                 String baseOutputFileName = Util
                         .getBaseFileName(outputFileName);
                 for (int i = 0; i < classVector.getClassCount(); i++) {
@@ -677,10 +693,10 @@ public class MarkerSelection {
                     }
                 } catch (IllegalArgumentException e) {
                     AnalysisUtil
-                            .exit("An error occurred while computing the p-value for " + expressionData.getRowName(i));
+                            .exit("An error occurred while computing the p-value for " + expressionData.getRowKey(i));
                 } catch (MathException e) {
                     AnalysisUtil
-                            .exit("An error occurred while computing the p-value for " + expressionData.getRowName(i));
+                            .exit("An error occurred while computing the p-value for " + expressionData.getRowKey(i));
                 }
             }
         } else {
@@ -1084,7 +1100,7 @@ public class MarkerSelection {
                 double bonferroni = Math.min(featureSpecificPValues[index] * numFeatures, 1.0);
                 pw.print(rank);
                 pw.print("\t");
-                pw.print(expressionData.getRowName(index));
+                pw.print(expressionData.getRowKey(index));
                 pw.print("\t");
                 if (rowDescriptions != null) {
                     String s = rowDescriptions[index];

@@ -12,8 +12,11 @@
 
 
 package edu.mit.broad.marker.permutation;
-import java.util.*;
-import org.genepattern.data.matrix.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import org.genepattern.matrix.ClassVectorImpl;
 /**
  * @author     Joshua Gould
  * @created    October 4, 2004
@@ -110,10 +113,10 @@ public class PermutationTest {
 	}
    
    static void test5() {
-      ClassVector cv = new ClassVector(new String[]{"0","0", "0", "0", "0", 
+      ClassVectorImpl cv = new ClassVectorImpl(new String[]{"0","0", "0", "0", "0", 
       "1", "1", "1", "1", "1"});
          
-      ClassVector covariate = new ClassVector(new String[]{"0","0", "2", "1", "1", 
+      ClassVectorImpl covariate = new ClassVectorImpl(new String[]{"0","0", "2", "1", "1", 
       "0", "1", "1", "1", "1"});   
 		UnbalancedRandomCovariatePermuter permuter = new UnbalancedRandomCovariatePermuter(cv, covariate, 123723423);
 		

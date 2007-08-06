@@ -1,21 +1,22 @@
-#Wed Oct 12 11:16:38 EDT 2005
+#Fri Jun 29 11:51:36 EDT 2007
 author=Joshua Gould, Gad Getz, Stefano Monti
-commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar org.genepattern.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -p<phenotype.test>
+commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>commons-math-1.1.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar org.genepattern.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -p<phenotype.test>
 
-# -t<theta>
-cpuType=any
-description=Computes significance values for features using several metrics, including FDR(BH), Q-Value, maxT, FWER, Feature-Specific P-Value, and Bonferroni.
-fileFormat=Comparative Marker Selection
-JVMLevel=1.4
-language=Java, R
-name=ComparativeMarkerSelection
-os=any
 privacy=public
-publicationDate=10/12/2005 11\:16 
+publicationDate=06/29/2007 11\:51 
 quality=production
 taskType=Gene List Selection
 userid=GenePattern
-version=Added additional metrics
+version=Added Paired T-Test
+
+cpuType=any
+description=Computes significance values for features using several metrics, including FDR(BH), Q-Value, maxT, FWER, Feature-Specific P-Value, and Bonferroni.
+fileFormat=Comparative Marker Selection
+JVMLevel=1.5
+language=Java, R
+LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00044\:999999999
+name=ComparativeMarkerSelection
+os=any
 
 p1_default_value=
 p1_description=The input file - .res, .gct, .odf type\=Dataset
@@ -57,14 +58,13 @@ p4_optional=
 p4_prefix_when_specified=
 p4_type=java.lang.String
 p4_value=0\=Class 0;1\=Class 1;2\=2 Sided
-
 p5_default_value=0
 p5_description=The statistic to use
 p5_name=test.statistic
 p5_optional=
 p5_prefix_when_specified=
 p5_type=java.lang.Integer
-p5_value=1\=SNR;0\=T-Test;3\=SNR (median);2\=T-Test (median);4\=T-Test (min std);5\=SNR (min std);6\=SNR (median, min std);7\=T-Test (median, min std)
+p5_value=1\=SNR;0\=T-Test;3\=SNR (median);2\=T-Test (median);4\=T-Test (min std);5\=SNR (min std);6\=SNR (median, min std);7\=T-Test (median, min std);8\=Paired T-Test
 
 p6_default_value=
 p6_description=The minimum standard deviation if test statistic includes min std option
@@ -115,7 +115,7 @@ p11_type=java.lang.String
 p11_value=true\=yes;false\=no
 
 p12_default_value=one versus all
-p12_description=Tests to perform when cls file has more than two classes (Note: not fully corrected for multiple hypothesis testing)
+p12_description=Tests to perform when cls file has more than two classes (Note\: not fully corrected for multiple hypothesis testing)
 p12_name=phenotype.test
 p12_optional=on
 p12_prefix_when_specified=
@@ -130,27 +130,4 @@ p13_prefix_when_specified=
 p13_type=java.lang.String
 p13_value=
 
-#p12_default_value=false
-#p12_description=Whether to attempt to increase the p-value accuracy for significant features
-#p12_name=significance.booster
-#p12_optional=on
-#p12_prefix_when_specified=
-#p12_type=java.lang.String
-#p12_value=true\=yes;false\=no
-
-#p13_default_value=0.70
-#p13_description=Value for removing features when using attempting to increase p-value accuracy
-#p13_name=theta
-#p13_optional=on
-#p13_prefix_when_specified=
-#p13_type=java.lang.Float
-#p13_value=
-
-#p15_default_value=
-#p15_description=Value for gamma when using significance booster (leave blank to estimate gamma)
-#p15_name=gamma
-#p15_optional=on
-#p15_prefix_when_specified=
-#p15_type=java.lang.Float
-#p15_value=
 

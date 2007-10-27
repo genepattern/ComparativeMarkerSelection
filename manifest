@@ -1,6 +1,6 @@
 #Fri Jun 29 11:51:36 EDT 2007
 author=Joshua Gould, Gad Getz, Stefano Monti
-commandLine=<java> -DR\=<R_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>commons-math-1.1.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar org.genepattern.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -p<phenotype.test>
+commandLine=<java> -DR\=<R2.5_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>commons-math-1.1.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar org.genepattern.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -p<phenotype.test>
 
 privacy=public
 publicationDate=06/29/2007 11\:51 
@@ -12,7 +12,7 @@ version=Added Paired T-Test
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q-Value, maxT, FWER, Feature-Specific P-Value, and Bonferroni.
 fileFormat=Comparative Marker Selection
-JVMLevel=1.5
+JVMLevel=1.5, 2.5.0
 language=Java, R
 LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00044\:999999999
 name=ComparativeMarkerSelection

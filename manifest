@@ -1,7 +1,9 @@
 #Fri Jun 29 11:51:36 EDT 2007
 author=Joshua Gould, Gad Getz, Stefano Monti
-commandLine=<java> -DR\=<R2.5_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>commons-math-1.1.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar org.genepattern.marker.MarkerSelection <input.filename> <cls.filename> <number.of.permutations> <test.direction> <output.file> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -m<min.std> -c<confounding.variable.cls.filename> -p<phenotype.test>
+commandLine=<java> -DR\=<R2.5_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>commons-math-1.1.jar<path.separator><libdir>gp-modules.jar<path.separator><libdir>jsci-core.jar org.genepattern.marker.MarkerSelection <input.file> <cls.file> <number.of.permutations> <test.direction> <output.filename> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -m<min.std> -c<confounding.variable.cls.file> -p<phenotype.test>
 
+requiredPatchLSIDs=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.patch\:00009\:1
+requiredPatchURLs=http://www.broad.mit.edu/webservices/gpModuleRepository/download/prod/patch/?file=/R_2_5_Check/broad.mit.edu:cancer.software.genepattern.server.patch/00009/1/R2_5.zip
 privacy=public
 publicationDate=06/29/2007 11\:51 
 quality=production
@@ -22,7 +24,7 @@ p1_default_value=
 p1_description=The input file - .res, .gct, .odf type\=Dataset
 p1_fileFormat=Dataset;gct;res
 p1_MODE=IN
-p1_name=input.filename
+p1_name=input.file
 p1_optional=
 p1_prefix_when_specified=
 p1_TYPE=FILE
@@ -33,7 +35,7 @@ p2_default_value=
 p2_description=The class file - .cls
 p2_fileFormat=cls
 p2_MODE=IN
-p2_name=cls.filename
+p2_name=cls.file
 p2_optional=
 p2_prefix_when_specified=
 p2_TYPE=FILE
@@ -44,7 +46,7 @@ p3_default_value=
 p3_description=The class file containing the confounding variable.
 p3_fileFormat=cls
 p3_MODE=IN
-p3_name=confounding.variable.cls.filename
+p3_name=confounding.variable.cls.file
 p3_optional=on
 p3_prefix_when_specified=
 p3_TYPE=FILE
@@ -122,9 +124,9 @@ p12_prefix_when_specified=
 p12_type=java.lang.String
 p12_value=one versus all;all pairs
 
-p13_default_value=<input.filename_basename>.comp.marker.odf
+p13_default_value=<input.file_basename>.comp.marker.odf
 p13_description=The name of the output file
-p13_name=output.file
+p13_name=output.filename
 p13_optional=
 p13_prefix_when_specified=
 p13_type=java.lang.String

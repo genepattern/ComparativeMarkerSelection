@@ -1,7 +1,6 @@
 compute.qvalue <- function(input.file) {
 	if(!file.exists(input.file)) {
-		print("Unable to compute q values")
-		return()
+		cat(paste("Unable to compute q values:", input.file, " not found."), sep='')
 	}
 	values <- read.table(input.file, sep="\t", row.names=NULL, colClasses="real")
    output.file <- 'qvalues.txt'

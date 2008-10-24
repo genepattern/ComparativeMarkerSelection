@@ -17,7 +17,7 @@
 		<antcall target="prezip"/>
 		
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
-			<fileset dir="." includes="manifest, qvalue.R, *.pdf"/>
+			<fileset dir="." includes="manifest, qvalue.R, ComparativeMarkerSelection.pdf"/>
 			<fileset refid="common.lib"/>
 		</zip>
 		<antcall target="postzip"/>

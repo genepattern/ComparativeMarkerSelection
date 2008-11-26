@@ -8,7 +8,7 @@
 	<target name="_init" depends="init">
 		
 		<path id="library.classpath">
-			<fileset dir="${libpath}" id="common.lib" includes="Jama-1.0.1.jar,colt.jar, 
+			<fileset dir="${libpath}" id="common.lib" includes="Jama-1.0.2.jar,colt.jar, 
 			gp-modules.jar, trove.jar, commons-math-1.2.jar, jsci-core.jar" />
 		</path>
 	</target>

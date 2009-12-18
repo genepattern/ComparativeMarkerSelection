@@ -4,21 +4,54 @@
 <project basedir="" default="package" name="ComparativeMarkerSelection">
 	<property name="dirOffset" value="../"/>
 	<import file="${dirOffset}/commontargets.xml"/>
-	
-	<target name="_init" depends="init">
+    <property name="inclds" value="org/"/>
+    <property name="temp" value="temp"/>
+
+    <target name="_init" depends="init">
 		
 		<path id="library.classpath">
-			<fileset dir="${libpath}" id="common.lib" includes="Jama-1.0.2.jar,colt.jar, 
-			gp-modules.jar, trove.jar, commons-math-1.2.jar, jsci-core.jar" />
-		</path>
+			<fileset dir="lib" id="lib" includes="Jama-1.0.2.jar,colt.jar,
+			trove.jar, commons-math-1.2.jar, jsci-core.jar" />
+            <fileset dir="lib" id="gp-modules-lib" includes="gp-modules.jar" />
+        </path>
+
+    </target>
+
+
+    <target name="compile" depends="_init">
+		<javac debug="true" defaultexcludes="true" deprecation="true" destdir="." includes="${inclds}" optimize="false"
+               proceed="false"
+               srcdir="src" target="${java.target}"
+               source="${java.target}">
+			<classpath refid="library.classpath"/>
+		</javac>
 	</target>
-		
-	<target depends="_init" name="create-zip">
+
+    <target name="update_gp-modules.jar">
+        <unjar src="lib/gp-modules.jar" dest="${temp}">
+            <patternset>
+                <exclude name="**/DefaultDataset*"/>
+            </patternset>
+
+        </unjar>
+        <jar destfile="gp-modules.jar" basedir="."
+            includes="org/** " manifest="temp/META-INF/MANIFEST.MF">
+            <fileset dir="temp"/>
+            </jar>
+    </target>
+
+    <target name="clean">
+        <delete>
+            <fileset dir="." includes="temp, gp-modules.jar, org"/>
+        </delete>
+    </target>
+
+    <target depends="clean, compile, update_gp-modules.jar" name="create-zip">
 		<antcall target="prezip"/>
 		
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
-			<fileset dir="." includes="manifest, qvalue.R, ComparativeMarkerSelection.pdf"/>
-			<fileset refid="common.lib"/>
+			<fileset dir="." includes="gp-modules.jar, manifest, qvalue.R, ComparativeMarkerSelection.pdf"/>
+			<fileset refid="lib"/>
 		</zip>
 		<antcall target="postzip"/>
 	</target>

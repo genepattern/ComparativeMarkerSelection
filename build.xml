@@ -10,7 +10,7 @@
     <target name="_init" depends="init">
 		
 		<path id="library.classpath">
-			<fileset dir="lib" id="lib" includes="Jama-1.0.2.jar,colt.jar,
+			<fileset dir="lib" id="lib" includes="Jama-1.0.1.jar,colt.jar,
 			trove.jar, commons-math-1.2.jar, jsci-core.jar" />
             <fileset dir="lib" id="gp-modules-lib" includes="gp-modules.jar" />
         </path>
@@ -28,21 +28,15 @@
 	</target>
 
     <target name="update_gp-modules.jar">
-        <unjar src="lib/gp-modules.jar" dest="${temp}">
-            <patternset>
-                <exclude name="**/DefaultDataset*"/>
-            </patternset>
+        <copy file="lib/gp-modules.jar" todir="."/>
+          <jar destfile="gp-modules.jar" basedir="." update="true" includes="org/**">
+         </jar>
 
-        </unjar>
-        <jar destfile="gp-modules.jar" basedir="."
-            includes="org/** " manifest="temp/META-INF/MANIFEST.MF">
-            <fileset dir="temp"/>
-            </jar>
     </target>
 
     <target name="clean">
         <delete>
-            <fileset dir="." includes="temp, gp-modules.jar, org"/>
+            <fileset dir="." includes="gp-modules.jar, org"/>
         </delete>
     </target>
 
@@ -52,7 +46,7 @@
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
 			<fileset dir="." includes="gp-modules.jar, manifest, qvalue.R, ComparativeMarkerSelection.pdf"/>
 			<fileset refid="lib"/>
-		</zip>
+        </zip>
 		<antcall target="postzip"/>
 	</target>
 

@@ -9,7 +9,7 @@ publicationDate=06/29/2007 11\:51
 quality=production
 taskType=Gene List Selection
 userid=GenePattern
-version=Fixed bug with all pairs option for res file
+version=Added additional info about asymptotic p-value calculation to doc
 
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q-Value, maxT, FWER, Feature-Specific P-Value, and Bonferroni.
@@ -77,7 +77,7 @@ p6_type=java.lang.String
 p6_value=
 
 p7_default_value=1000
-p7_description=The number of permutations to perform (use 0 to calculate asymptotic p-values using the standard two sample t-test)
+p7_description=The number of permutations to perform (use 0 to calculate asymptotic p-values using the standard independent two-sample t-test)
 p7_name=number.of.permutations
 p7_optional=
 p7_prefix_when_specified=

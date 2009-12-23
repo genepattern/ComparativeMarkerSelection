@@ -77,7 +77,7 @@ p6_type=java.lang.String
 p6_value=
 
 p7_default_value=1000
-p7_description=The number of permutations to perform (use 0 to calculate asymptotic p-values)
+p7_description=The number of permutations to perform (use 0 to calculate asymptotic p-values using the standard two sample t-test)
 p7_name=number.of.permutations
 p7_optional=
 p7_prefix_when_specified=

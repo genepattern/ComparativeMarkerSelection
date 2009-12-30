@@ -9,7 +9,7 @@ publicationDate=06/29/2007 11\:51
 quality=production
 taskType=Gene List Selection
 userid=GenePattern
-version=Added additional info about asymptotic p-value calculation to doc
+version=Fixed bug with using res files with paired t-test 
 
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q-Value, maxT, FWER, Feature-Specific P-Value, and Bonferroni.

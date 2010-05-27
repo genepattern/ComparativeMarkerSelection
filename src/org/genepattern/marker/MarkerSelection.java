@@ -595,7 +595,7 @@ public class MarkerSelection {
 
             if(e.getMessage().contains("insufficient data"))
             {
-                AnalysisUtil.exit("Not enough samples in each class to calculate a p-value. A minimum of two samples in each class is required.");
+                AnalysisUtil.exit("Not enough samples in each class to calculate asymptotic p-values. A minimum of two samples in each class is required.");
             }
             else
             {

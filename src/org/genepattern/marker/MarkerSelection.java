@@ -51,7 +51,7 @@ import JSci.maths.statistics.BetaDistribution;
 
 /** @author Joshua Gould */
 public class MarkerSelection {
-    private static boolean printStackTraces = false;
+    private static boolean printStackTraces = true;
 
     private static boolean printPermutations = false;
 
@@ -586,13 +586,23 @@ public class MarkerSelection {
 		    classOneValues[j] = row[classOneIndices[j]];
 		}
 		try {
-		    featureSpecificPValues[i] = test.tTest(classZeroValues, classOneValues);
+            featureSpecificPValues[i] = test.tTest(classZeroValues, classOneValues);
 		    if (testDirection != Constants.TWO_SIDED) {
 			featureSpecificPValues[i] /= 2;
 		    }
 		} catch (IllegalArgumentException e) {
-		    AnalysisUtil.exit("An error occurred while computing the p-value for " + dataset.getRowName(i));
+            e.printStackTrace();
+
+            if(e.getMessage().contains("insufficient data"))
+            {
+                AnalysisUtil.exit("Not enough samples in each class to calculate a p-value. A minimum of two samples in each class is required.");
+            }
+            else
+            {
+                AnalysisUtil.exit("An error occurred while computing the p-value for " + dataset.getRowName(i));
+            }
 		} catch (MathException e) {
+            e.printStackTrace();
 		    AnalysisUtil.exit("An error occurred while computing the p-value for " + dataset.getRowName(i));
 		}
 	    }

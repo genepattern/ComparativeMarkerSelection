@@ -209,23 +209,26 @@ public class RInterpreter {
     }
 
     private static String[] createCommandLine(String pathToRHome) {
-	String[] commandLine = null;
-	boolean runningOnWindows = System.getProperty("os.name").startsWith("Windows");
-	if (runningOnWindows) {
-	    if (pathToRHome == null) {
-		// assume Rterm is in path
-		commandLine = new String[] { "cmd", "/c", "Rterm" };
-	    } else {
-		commandLine = new String[] { "cmd", "/c", pathToRHome + "\\bin\\Rterm" };
-	    }
-	} else {
-	    if (pathToRHome == null) {
-		// assume R is in path
-		commandLine = new String[] { "R" };
-	    } else {
-		commandLine = new String[] { pathToRHome + "/bin/R" };
-	    }
-	}
-	return commandLine;
-    }
+        String[] commandLine = null;
+        boolean runningOnWindows = System.getProperty("os.name").startsWith("Windows");
+        if (runningOnWindows) {
+            if (pathToRHome == null) {
+                // assume Rterm is in path
+                commandLine = new String[] { "cmd", "/c", "Rterm" };
+            }
+            else {
+                //wrap cmd in double quotes
+                String rCmd = "\"" + pathToRHome + "\\bin\\Rterm" + "\"";
+                commandLine = new String[] { "cmd", "/c",  rCmd };
+            }
+        } else {
+            if (pathToRHome == null) {
+                // assume R is in path
+                commandLine = new String[] { "R" };
+            } else {
+                commandLine = new String[] { pathToRHome + "/bin/R" };
+            }
+        }
+        return commandLine;
+    } 
 }

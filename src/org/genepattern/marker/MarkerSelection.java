@@ -160,6 +160,9 @@ public class MarkerSelection {
      */
     private double theta = 0.25;
 
+    /**Whether data is in log format */
+    private boolean loggedData = false;
+
     /** Whether to smooth p values */
     private boolean smoothPValues;
 
@@ -348,6 +351,13 @@ public class MarkerSelection {
 	    if (value.equals("")) {
 		continue;
 	    }
+        if(arg.equals("-g"))
+        {
+            if(value.equalsIgnoreCase("yes"))
+            {
+                loggedData = true;
+            }
+        }
 	    if (arg.equals("-m")) {
 		try {
 		    minStd = IOUtil.parseDouble(value);
@@ -655,8 +665,15 @@ public class MarkerSelection {
 		    denominator = 0.01;
 		}
 	    }
-	    foldChange[i] = numerator / denominator;
-	}
+
+        if(loggedData)
+        {
+            foldChange[i] = numerator - denominator;         
+        }
+        else
+        {
+            foldChange[i] = numerator / denominator;
+        }
 	int[] kArray = new int[numFeatures];
 	if (!asymptotic) {
 	    for (int i = 0; i < numFeatures; i++) {
@@ -678,22 +695,23 @@ public class MarkerSelection {
 		    }
 		    p *= 2;
 		    if (p == 0) {
-			// ensure not degenerate case where profile is
-			// completely
-			// flat
-			// TODO handle cases where profile is flat (but not
-			// completely)
-			double[] row = dataArray[i];
-			double val = row[0];
-			boolean flat = true;
-			for (int j = 1, cols = row.length; j < cols && flat; j++) {
-			    if (row[j] != val) {
-				flat = false;
-			    }
-			}
-			if (flat) {
-			    p = 1;
-			}
+                // ensure not degenerate case where profile is
+                // completely
+                // flat
+                // TODO handle cases where profile is flat (but not
+                // completely)
+                double[] row = dataArray[i];
+                double val = row[0];
+                boolean flat = true;
+                for (int j = 1, cols = row.length; j < cols && flat; j++) {
+                    if (row[j] != val) {
+                    flat = false;
+                    }
+                }
+                if (flat) {
+                    System.out.println("p-value is flat for feature " + dataset.getRowName(i));
+                    p = 1;
+                }
 		    }
 		}
 		featureSpecificPValues[i] = p;

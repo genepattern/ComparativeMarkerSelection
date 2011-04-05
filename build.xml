@@ -1,50 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Ant build file -->
 
-<project basedir="" default="package" name="ComparativeMarkerSelection">
+<project basedir="." default="create-zip" name="ComparativeMarkerSelection">
 	<property name="dirOffset" value="../"/>
 	<import file="${dirOffset}/commontargets.xml"/>
-    <property name="inclds" value="org/"/>
-    <property name="temp" value="temp"/>
 
     <target name="_init" depends="init">
-		
-		<path id="library.classpath">
-			<fileset dir="lib" id="lib" includes="Jama-1.0.1.jar,colt.jar,
+		<fileset dir="../lib" id="lib" includes="Jama-1.0.2.jar,colt.jar,
 			trove.jar, commons-math-1.2.jar, jsci-core.jar" />
-            <fileset dir="lib" id="gp-modules-lib" includes="gp-modules.jar" />
-        </path>
-
     </target>
 
-
-    <target name="compile" depends="_init">
-		<javac debug="true" defaultexcludes="true" deprecation="true" destdir="." includes="${inclds}" excludes="org/genepattern/io" optimize="false"
-               proceed="false"
-               srcdir="src" target="${java.target}"
-               source="${java.target}">
-			<classpath refid="library.classpath"/>
-		</javac>
-	</target>
-
-    <target name="update_gp-modules.jar">
-        <copy file="lib/gp-modules.jar" todir="."/>
-          <jar destfile="gp-modules.jar" basedir="." update="true" includes="org/**">
-         </jar>
-
-    </target>
-
-    <target name="clean">
-        <delete>
-            <fileset dir="." includes="gp-modules.jar, org"/>
-        </delete>
-    </target>
-
-    <target depends="clean, compile, update_gp-modules.jar" name="create-zip">
-		<antcall target="prezip"/>
-		
+    <target name="create-zip" depends="init">
+        <ant antfile="build.xml" target="package" dir="../common/core"/>
+        <antcall target="prezip"/>
+        <echo  message="dest dir: ${dest.dir}"/>
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
-			<fileset dir="." includes="gp-modules.jar, manifest, qvalue.R, ComparativeMarkerSelection.pdf"/>
+            <fileset dir="." includes="manifest, qvalue.R, ComparativeMarkerSelection.pdf"/>
+			<fileset dir="../common/core" includes="gp-modules.jar"/>
 			<fileset refid="lib"/>
         </zip>
 		<antcall target="postzip"/>

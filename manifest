@@ -21,7 +21,7 @@ name=ComparativeMarkerSelection
 os=any
 
 p1_default_value=
-p1_description=The input file - .res, .gct, .odf type\=Dataset
+p1_description=The input file - .res, .gct
 p1_fileFormat=Dataset;gct;res
 p1_MODE=IN
 p1_name=input.file

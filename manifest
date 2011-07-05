@@ -1,11 +1,12 @@
+#Wed, 29 Jun 2011 13:41:21 -0400
 #Fri Jun 29 11:51:36 EDT 2007
 author=Joshua Gould, Gad Getz, Stefano Monti
 commandLine=<java> -DR\=<R2.5_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>colt.jar<path.separator><libdir>jsci-core.jar org.broadinstitute.marker.MarkerSelection <input.file> <cls.file> <number.of.permutations> <test.direction> <output.filename> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -l<log.transformed.data> -m<min.std> -c<confounding.variable.cls.file> -p<phenotype.test>
 
 requiredPatchLSIDs=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.server.patch\:00009\:1
-requiredPatchURLs=http://www.broad.mit.edu/webservices/gpModuleRepository/download/prod/patch/?file=/R_2_5_Check/broad.mit.edu:cancer.software.genepattern.server.patch/00009/1/R2_5.zip
+requiredPatchURLs=http\://www.broad.mit.edu/webservices/gpModuleRepository/download/prod/patch/?file\=/R_2_5_Check/broad.mit.edu\:cancer.software.genepattern.server.patch/00009/1/R2_5.zip
 privacy=public
-publicationDate=06/29/2007 11\:51 
+publicationDate=06/29/2011 13\:41 
 quality=production
 taskType=Gene List Selection
 userid=GenePattern
@@ -16,7 +17,7 @@ description=Computes significance values for features using several metrics, inc
 fileFormat=Comparative Marker Selection
 JVMLevel=1.5, 2.5.0
 language=Java, R
-LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00044\:999999999
+LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00044\:7.4
 name=ComparativeMarkerSelection
 os=any
 

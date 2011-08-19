@@ -10,7 +10,7 @@ publicationDate=06/29/2011 13\:41
 quality=production
 taskType=Gene List Selection
 userid=GenePattern
-version=Improved error for when input file could not be parsed
+version=updated doc for new log transformed parameter and better info for other parameters
 
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q-Value, maxT, FWER, Feature-Specific P-Value, and Bonferroni.
@@ -22,7 +22,7 @@ name=ComparativeMarkerSelection
 os=any
 
 p1_default_value=
-p1_description=The input file - .res, .gct
+p1_description=The input file - .res, .gct. Note that if your data is log transformed, you will need to set the "log transformed data" parameter below to "yes".
 p1_fileFormat=Dataset;gct;res
 p1_MODE=IN
 p1_name=input.file

@@ -86,7 +86,7 @@ p7_type=java.lang.String
 p7_value=
 
 p8_default_value=false
-p8_description=Whether the input data has been logged transformed
+p8_description=Whether the input data has been log transformed
 p8_name=log.transformed.data
 p8_optional=
 p8_prefix_when_specified=

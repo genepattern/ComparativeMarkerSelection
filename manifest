@@ -9,8 +9,7 @@ privacy=public
 publicationDate=06/29/2011 13\:41 
 quality=production
 taskType=Gene List Selection
-userid=GenePattern
-version=updated doc for new log transformed parameter and better info for other parameters
+userid=re-compiled with Java 1.5
 
 cpuType=any
 description=Computes significance values for features using several metrics, including FDR(BH), Q-Value, maxT, FWER, Feature-Specific P-Value, and Bonferroni.

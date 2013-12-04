@@ -10,9 +10,10 @@ publicationDate=06/29/2011 13\:41
 quality=production
 taskType=Gene List Selection
 userid=
-version=Changed default number of permutations to 10000
+version=Converted to html doc
 
 cpuType=any
+taskDoc=doc.html
 description=Computes significance values for features using several metrics, including FDR(BH), Q-Value, maxT, FWER, Feature-Specific P-Value, and Bonferroni.
 fileFormat=Comparative Marker Selection
 JVMLevel=1.5, 2.5.0

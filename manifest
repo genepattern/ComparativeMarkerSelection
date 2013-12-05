@@ -14,7 +14,7 @@ version=Converted to html doc
 
 cpuType=any
 taskDoc=doc.html
-description=Computes significance values for features using several metrics, including FDR(BH), Q-Value, maxT, FWER, Feature-Specific P-Value, and Bonferroni.
+description=Identify differentially expressed genes that can discriminate between distinct classes of samples.
 fileFormat=Comparative Marker Selection
 JVMLevel=1.5, 2.5.0
 language=Java, R

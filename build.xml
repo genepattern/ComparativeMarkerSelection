@@ -17,7 +17,7 @@
 		<zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
             <fileset dir="." includes="manifest, qvalue.R, doc.html"/>
 			<fileset dir="../common/core" includes="gp-modules.jar"/>
-			<fileset refid="lib"/>
+	    <fileset dir="../lib" id="common.lib" includes="Jama-1.0.2.jar,colt.jar, trove.jar, commons-math-1.2.jar, jsci-core.jar" />
         </zip>
 		<antcall target="postzip"/>
 	</target>

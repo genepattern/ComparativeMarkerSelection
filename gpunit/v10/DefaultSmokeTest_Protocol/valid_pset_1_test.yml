@@ -3,8 +3,8 @@
 name: Valid Parameter Set 1
 module: ComparativeMarkerSelection
 params:
-       input.file: "/Modules/TestSuiteData/ComparativeMarkerSelection/v10/all_aml_test.gct"
-       cls.file: "/Modules/TestSuiteData/ComparativeMarkerSelection/v10/all_aml_test.cls"
+       input.file: "all_aml_test.gct"
+       cls.file: "all_aml_test.cls"
        confounding.variable.cls.file: 
        test.direction: "2"
        test.statistic: "0"

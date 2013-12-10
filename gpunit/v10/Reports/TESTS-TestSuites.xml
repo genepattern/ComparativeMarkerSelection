@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites>
+  <testsuite errors="0" failures="0" hostname="gp857-f0d" id="0" name="BatchModuleTest" package="org.genepattern.gpunit.test" skipped="0" tests="0" time="0.045" timestamp="2013-12-10T20:56:29">
+      <properties>
+          <property name="java.vendor" value="Oracle Corporation" />
+
+          <property name="username" value="bhill@broadinstitute.org" />
+
+          <property name="sun.java.launcher" value="SUN_STANDARD" />
+
+          <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers" />
+
+          <property name="junit.parallel.shutdown.timeout" value="1800" />
+
+          <property name="os.name" value="Windows 7" />
+
+          <property name="java.target" value="1.5" />
+
+          <property name="sun.boot.class.path" value="C:\Program Files\Java\jdk1.7.0_45\jre\lib\resources.jar;C:\Program Files\Java\jdk1.7.0_45\jre\lib\rt.jar;C:\Program Files\Java\jdk1.7.0_45\jre\lib\sunrsasign.jar;C:\Program Files\Java\jdk1.7.0_45\jre\lib\jsse.jar;C:\Program Files\Java\jdk1.7.0_45\jre\lib\jce.jar;C:\Program Files\Java\jdk1.7.0_45\jre\lib\charsets.jar;C:\Program Files\Java\jdk1.7.0_45\jre\lib\jfr.jar;C:\Program Files\Java\jdk1.7.0_45\jre\classes" />
+
+          <property name="TODAY" value="December 10 2013" />
+
+          <property name="sun.desktop" value="windows" />
+
+          <property name="java.vm.specification.vendor" value="Oracle Corporation" />
+
+          <property name="ant.home" value="C:\Program Files (x86)\apache-ant-1.9.2\bin\.." />
+
+          <property name="java.runtime.version" value="1.7.0_45-b18" />
+
+          <property name="gpunit.client" value="SOAP" />
+
+          <property name="user.name" value="bhill" />
+
+          <property name="gp-client-lib-exists" value="true" />
+
+          <property name="client.lib.dir" value="C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client" />
+
+          <property name="gpunit.delete.jobs" value="true" />
+
+          <property name="user.language" value="en" />
+
+          <property name="project.basedir" value="C:\IdeaProjects\GPModules\util\gp-unit" />
+
+          <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk1.7.0_45\jre\bin" />
+
+          <property name="gpunit.testfolder" value="../../ComparativeMarkerSelectiongpunitv10" />
+
+          <property name="ant.project.default-target" value="package" />
+
+          <property name="gp.password" value="test" />
+
+          <property name="ant.project.name" value="gp-unit" />
+
+          <property name="DSTAMP" value="20131210" />
+
+          <property name="gpunit.shutdowntimeout" value="1800" />
+
+          <property name="java.version" value="1.7.0_45" />
+
+          <property name="user.timezone" value="" />
+
+          <property name="sun.arch.data.model" value="64" />
+
+          <property name="java.endorsed.dirs" value="C:\Program Files\Java\jdk1.7.0_45\jre\lib\endorsed" />
+
+          <property name="sun.cpu.isalist" value="amd64" />
+
+          <property name="gp.host" value="genepatternbeta.broadinstitute.org" />
+
+          <property name="sun.jnu.encoding" value="Cp1252" />
+
+          <property name="file.encoding.pkg" value="sun.io" />
+
+          <property name="testcases" value="C:\IdeaProjects\GPModules\ComparativeMarkerSelectiongpunitv10" />
+
+          <property name="gpunit.properties" value="C:\IdeaProjects\GPModules\ComparativeMarkerSelection\gpunit\v10\gpunit.properties" />
+
+          <property name="file.separator" value="\" />
+
+          <property name="genePatternUrl" value="http://genepatternbeta.broadinstitute.org" />
+
+          <property name="java.specification.name" value="Java Platform API Specification" />
+
+          <property name="junit.parallel.threads" value="1" />
+
+          <property name="java.class.version" value="51.0" />
+
+          <property name="user.country" value="US" />
+
+          <property name="java.home" value="C:\Program Files\Java\jdk1.7.0_45\jre" />
+
+          <property name="java.vm.info" value="mixed mode" />
+
+          <property name="ant.file" value="C:\IdeaProjects\GPModules\util\gp-unit\build.xml" />
+
+          <property name="os.version" value="6.1" />
+
+          <property name="gp.url" value="http://genepatternbeta.broadinstitute.org" />
+
+          <property name="gpunit.save.downloads" value="false" />
+
+          <property name="path.separator" value=";" />
+
+          <property name="java.vm.version" value="24.45-b08" />
+
+          <property name="report.dir" value="C:/IdeaProjects/GPModules/ComparativeMarkerSelection/gpunit/v10/Reports" />
+
+          <property name="user.variant" value="" />
+
+          <property name="ant.library.dir" value="C:\Program Files (x86)\apache-ant-1.9.2\lib" />
+
+          <property name="java.awt.printerjob" value="sun.awt.windows.WPrinterJob" />
+
+          <property name="sun.io.unicode.encoding" value="UnicodeLittle" />
+
+          <property name="ant.file.type.gp-unit" value="file" />
+
+          <property name="awt.toolkit" value="sun.awt.windows.WToolkit" />
+
+          <property name="user.script" value="" />
+
+          <property name="gpunit.upload.dir" value="" />
+
+          <property name="user.home" value="C:\Users\bhill" />
+
+          <property name="java.specification.vendor" value="Oracle Corporation" />
+
+          <property name="java.library.path" value="C:\Program Files\Java\jdk1.7.0_45\jre\bin;C:\Windows\Sun\Java\bin;C:\Windows\system32;C:\Windows;C:\Program Files\CollabNet\Subversion Client;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files (x86)\QuickTime\QTSystem\;C:\Program Files\VanDyke Software\Clients\;C:\Program Files (x86)\apache-ant-1.9.2\bin;;." />
+
+          <property name="java.vendor.url" value="http://java.oracle.com/" />
+
+          <property name="gpunit.numthreads" value="1" />
+
+          <property name="java.vm.vendor" value="Oracle Corporation" />
+
+          <property name="java.runtime.name" value="Java(TM) SE Runtime Environment" />
+
+          <property name="sun.java.command" value="org.apache.tools.ant.taskdefs.optional.junit.JUnitTestRunner org.genepattern.gpunit.test.BatchModuleTest filtertrace=true haltOnError=false haltOnFailure=false formatter=org.apache.tools.ant.taskdefs.optional.junit.SummaryJUnitResultFormatter showoutput=true outputtoformatters=true logfailedtests=true logtestlistenerevents=false formatter=org.apache.tools.ant.taskdefs.optional.junit.XMLJUnitResultFormatter,C:\IdeaProjects\GPModules\ComparativeMarkerSelection\gpunit\v10\Reports\TEST-all.xml crashfile=C:\IdeaProjects\GPModules\util\gp-unit\junitvmwatcher1837081810617856566.properties propsfile=C:\IdeaProjects\GPModules\util\gp-unit\junit7170400993528241900.properties" />
+
+          <property name="java.class.path" value="C:\IdeaProjects\GPModules\util\gp-unit\classes;C:\IdeaProjects\GPModules\util\gp-unit\lib\JUnitParams-0.4.0.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\commons-codec-1.3.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\gp-modules-updated.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\httpclient-4.0.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\httpcore-4.0.1.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\junit-4.11-SNAPSHOT-20120805-1225.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\snakeyaml-1.10.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\GenePattern.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\Jama-1.0.1.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\MAGEstk-2003-10-24-v1.1-compatible.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\activation.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\axis.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\commons-codec-1.3.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\commons-discovery-0.2.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\commons-httpclient-3.1.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\commons-logging.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\gp-modules.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\jaxrpc.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\log4j-1.2.16.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\mail.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\saaj.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\trove.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\wsdl4j-1.5.1.jar;C:\IdeaProjects\GPModules\util\gp-unit;C:\Program Files (x86)\QuickTime\QTSystem\QTJava.zip;C:\Program Files (x86)\apache-ant-1.9.2\lib\ant-launcher.jar;C:\Program Files (x86)\apache-ant-1.9.2\lib\ant.jar;C:\Program Files (x86)\apache-ant-1.9.2\lib\ant-junit.jar;C:\Program Files (x86)\apache-ant-1.9.2\lib\ant-junit4.jar" />
+
+          <property name="ant.version" value="Apache Ant(TM) version 1.9.2 compiled on July 8 2013" />
+
+          <property name="TSTAMP" value="1556" />
+
+          <property name="java.vm.specification.name" value="Java Virtual Machine Specification" />
+
+          <property name="ant.file.type" value="file" />
+
+          <property name="gpunit.outputdir" value="C:/IdeaProjects/GPModules/ComparativeMarkerSelection/gpunit/v10/jobResults" />
+
+          <property name="gp.port" value="" />
+
+          <property name="java.vm.specification.version" value="1.7" />
+
+          <property name="sun.os.patch.level" value="Service Pack 1" />
+
+          <property name="sun.cpu.endian" value="little" />
+
+          <property name="java.io.tmpdir" value="C:\Users\bhill\AppData\Local\Temp\" />
+
+          <property name="java.vendor.url.bug" value="http://bugreport.sun.com/bugreport/" />
+
+          <property name="gpunit.testcase.dirs" value="C:\IdeaProjects\GPModules\ComparativeMarkerSelectiongpunitv10" />
+
+          <property name="java.awt.graphicsenv" value="sun.awt.Win32GraphicsEnvironment" />
+
+          <property name="os.arch" value="amd64" />
+
+          <property name="java.ext.dirs" value="C:\Program Files\Java\jdk1.7.0_45\jre\lib\ext;C:\Windows\Sun\Java\lib\ext" />
+
+          <property name="gpunit.batch.name" value="run_20131210_1556" />
+
+          <property name="user.dir" value="C:\IdeaProjects\GPModules\util\gp-unit" />
+
+          <property name="password" value="test" />
+
+          <property name="gp.user" value="bhill@broadinstitute.org" />
+
+          <property name="gpunit.dir" value="C:\IdeaProjects\GPModules\util\gp-unit" />
+
+          <property name="line.separator" value="&#xd;&#xa;" />
+
+          <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM" />
+
+          <property name="ant.file.gp-unit" value="C:\IdeaProjects\GPModules\util\gp-unit\build.xml" />
+
+          <property name="basedir" value="C:\IdeaProjects\GPModules\util\gp-unit" />
+
+          <property name="ant.java.version" value="1.7" />
+
+          <property name="ant.core.lib" value="C:\Program Files (x86)\apache-ant-1.9.2\lib\ant.jar" />
+
+          <property name="file.encoding" value="Cp1252" />
+
+          <property name="gpunit.server.dir" value="Z:/Modules/TestSuiteData/ComparativeMarkerSelection/" />
+
+          <property name="local.dir" value="C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org" />
+
+          <property name="gpunit.classpath.prop" value="C:\IdeaProjects\GPModules\util\gp-unit\classes;C:\IdeaProjects\GPModules\util\gp-unit\lib\JUnitParams-0.4.0.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\commons-codec-1.3.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\gp-modules-updated.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\httpclient-4.0.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\httpcore-4.0.1.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\junit-4.11-SNAPSHOT-20120805-1225.jar;C:\IdeaProjects\GPModules\util\gp-unit\lib\snakeyaml-1.10.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\GenePattern.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\Jama-1.0.1.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\MAGEstk-2003-10-24-v1.1-compatible.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\activation.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\axis.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\commons-codec-1.3.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\commons-discovery-0.2.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\commons-httpclient-3.1.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\commons-logging.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\gp-modules.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\jaxrpc.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\log4j-1.2.16.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\mail.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\saaj.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\trove.jar;C:\IdeaProjects\GPModules\util\gp-unit\tmp\genepatternbeta.broadinstitute.org\client\lib\wsdl4j-1.5.1.jar" />
+
+          <property name="java.specification.version" value="1.7" />
+
+          <property name="ant.project.invoked-targets" value="gpunit" />
+
+      </properties>
+
+      <system-out><![CDATA[]]></system-out>
+
+      <system-err><![CDATA[]]></system-err>
+
+  </testsuite>
+</testsuites>

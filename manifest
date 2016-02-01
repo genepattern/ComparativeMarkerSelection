@@ -1,5 +1,3 @@
-#ComparativeMarkerSelection
-#Mon Feb 01 13:12:42 EST 2016
 author=Joshua Gould, Gad Getz, Stefano Monti
 commandLine=<run-with-env> -u Java -u R-2.5 java <java_flags> -Dlibdir=<libdir> -cp <libdir>gp-modules.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>colt.jar<path.separator><libdir>jsci-core.jar org.broadinstitute.marker.MarkerSelection <input.file> <cls.file> <number.of.permutations> <test.direction> <output.filename> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -l<log.transformed.data> -m<min.std> -c<confounding.variable.cls.file> -p<phenotype.test>
 

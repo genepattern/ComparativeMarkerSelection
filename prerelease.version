@@ -1,9 +1,2 @@
-#prerelease version number
-#Fri, 17 Jan 2014 12:56:30 -0500
-#updated after building 9.2
-#Wed, 11 Dec 2013 16:40:59 -0500
-#updated after building 9.1
-#Wed, 04 Dec 2013 21:19:36 -0500
-#prerelease version number
-#Mon Mar 26 10:27:04 EDT 2012
-prerelease.number=1
+#prerelease version number after manual edit
+prerelease.number=2

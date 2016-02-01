@@ -1,16 +1,14 @@
-#Wed, 29 Jun 2011 13:41:21 -0400
-#Fri Jun 29 11:51:36 EDT 2007
+#ComparativeMarkerSelection
+#Mon Feb 01 13:12:42 EST 2016
 author=Joshua Gould, Gad Getz, Stefano Monti
-commandLine=<java> -DR\=<R2.5_HOME> -Dlibdir\=<libdir> <java_flags> -cp <libdir>gp-modules.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>colt.jar<path.separator><libdir>jsci-core.jar org.broadinstitute.marker.MarkerSelection <input.file> <cls.file> <number.of.permutations> <test.direction> <output.filename> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -l<log.transformed.data> -m<min.std> -c<confounding.variable.cls.file> -p<phenotype.test>
+commandLine=<run-with-env> -u Java -u R-2.5 java <java_flags> -Dlibdir=<libdir> -cp <libdir>gp-modules.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>colt.jar<path.separator><libdir>jsci-core.jar org.broadinstitute.marker.MarkerSelection <input.file> <cls.file> <number.of.permutations> <test.direction> <output.filename> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -l<log.transformed.data> -m<min.std> -c<confounding.variable.cls.file> -p<phenotype.test>
 
-requiredPatchLSIDs=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.server.patch\:00009\:1
-requiredPatchURLs=http\://www.broad.mit.edu/webservices/gpModuleRepository/download/prod/patch/?file\=/R_2_5_Check/broad.mit.edu\:cancer.software.genepattern.server.patch/00009/1/R2_5.zip
 privacy=public
-publicationDate=06/29/2011 13\:41 
-quality=production
+publicationDate=02/01/2016 13\:40 
+quality=preproduction
 taskType=Gene List Selection
 userid=
-version=Converted documentation from pdf to html
+version=Updated command line to use <run-with-env> wrapper script
 
 cpuType=any
 taskDoc=doc.html
@@ -18,7 +16,7 @@ description=Identify differentially expressed genes that can discriminate betwee
 fileFormat=Comparative Marker Selection
 JVMLevel=1.5, 2.5.0
 language=Java, R
-LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00044\:7.4
+LSID=urn\:lsid\:broad.mit.edu\:cancer.software.genepattern.module.analysis\:00044\:10.1
 name=ComparativeMarkerSelection
 os=any
 
@@ -62,6 +60,7 @@ p4_optional=
 p4_prefix_when_specified=
 p4_type=java.lang.String
 p4_value=0\=Class 0;1\=Class 1;2\=2 Sided
+
 p5_default_value=0
 p5_description=The statistic to use
 p5_name=test.statistic

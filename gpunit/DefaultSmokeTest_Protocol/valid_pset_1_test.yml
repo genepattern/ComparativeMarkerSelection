@@ -4,19 +4,19 @@ name: ComparativeMarkerSelection - Valid Parameter Set 1
 description: (no description)
 module: ComparativeMarkerSelection
 params:
-       input.file: "../input/all_aml_test.gct"
-       cls.file: "../input/all_aml_test.cls"
-       confounding.variable.cls.file: 
-       test.direction: "2"
-       test.statistic: "0"
-       min.std: 
-       number.of.permutations: "10000"
-       log.transformed.data: "false"
-       complete: "false"
-       balanced: "false"
-       random.seed: "779948241"
-       smooth.p.values: "true"
-       phenotype.test: "one versus all"
-       output.filename: "<input.file_basename>.default..comp.marker.odf"
+    input.file: "../input/all_aml_test.gct"
+    cls.file: "../input/all_aml_test.cls"
+    confounding.variable.cls.file: 
+    test.direction: "2"
+    test.statistic: "0"
+    min.std: 
+    number.of.permutations: "10000"
+    log.transformed.data: "false"
+    complete: "false"
+    balanced: "false"
+    random.seed: "779948241"
+    smooth.p.values: "true"
+    phenotype.test: "one versus all"
+    output.filename: "<input.file_basename>.default.comp.marker.odf"
 assertions:
-        jobStatus: success
+    jobStatus: success

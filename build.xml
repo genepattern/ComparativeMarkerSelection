@@ -5,19 +5,13 @@
     <property name="dirOffset" value="../common_module_code" />
     <import file="${dirOffset}/commontargets.xml"/>
 
-    <target name="_init" depends="init">
-        <fileset dir="../lib" id="lib" includes="Jama-1.0.2.jar,colt.jar,
-            trove.jar, commons-math-1.2.jar, jsci-core.jar" />
-    </target>
-
     <target name="create-zip" depends="init">
-        <ant antfile="build.xml" target="package" dir="../common/core"/>
         <antcall target="prezip"/>
         <echo  message="dest dir: ${dest.dir}"/>
+        <property name="module.dir" location="module" />
         <zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
-            <fileset dir="." includes="manifest, qvalue.R, doc.html"/>
-            <fileset dir="../common/core" includes="gp-modules.jar"/>
-        <fileset dir="../lib" id="common.lib" includes="Jama-1.0.2.jar,colt.jar, trove.jar, commons-math-1.2.jar, jsci-core.jar" />
+            <fileset dir="." includes="manifest" />
+            <fileset dir="${module.dir}" />
         </zip>
         <antcall target="postzip"/>
     </target>

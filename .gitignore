@@ -1,0 +1,8 @@
+.DS_Store
+*~
+
+# ignore the 'build' directory
+build/
+
+# ignore the 'reports' directory
+reports/

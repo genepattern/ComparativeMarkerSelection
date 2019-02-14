@@ -4,8 +4,8 @@ name: ComparativeMarkerSelection - Valid Parameter Set 1
 description: (no description)
 module: ComparativeMarkerSelection
 params:
-       input.file: "<%gpunit.testData%>/gpunit/ComparativeMarkerSelection/v10/all_aml_test.gct"
-       cls.file: "<%gpunit.testData%>/gpunit/ComparativeMarkerSelection/v10/all_aml_test.cls"
+       input.file: "ftp://gpftp.broadinstitute.org/gpunit/ComparativeMarkerSelection/v10/all_aml_test.gct"
+       cls.file: "ftp://gpftp.broadinstitute.org/gpunit/ComparativeMarkerSelection/v10/all_aml_test.cls"
        confounding.variable.cls.file: 
        test.direction: "2"
        test.statistic: "0"

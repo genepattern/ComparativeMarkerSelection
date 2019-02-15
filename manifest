@@ -1,14 +1,15 @@
-#Wed, 13 Feb 2019 23:08:42 -0500
+#Fri, 15 Feb 2019 13:12:21 -0500
 author=Joshua Gould, Gad Getz, Stefano Monti
-job.docker.image=genepattern/docker-r-2-5:0.1
-commandLine=java <java_flags> -Dlibdir\=<libdir> -cp <libdir>gp-modules.jar<path.separator><libdir>commons-math-1.2.jar<path.separator><libdir>trove.jar<path.separator><libdir>Jama-1.0.2.jar<path.separator><libdir>colt.jar<path.separator><libdir>jsci-core.jar org.broadinstitute.marker.MarkerSelection <input.file> <cls.file> <number.of.permutations> <test.direction> <output.filename> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -l<log.transformed.data> -m<min.std> -c<confounding.variable.cls.file> -p<phenotype.test>
+job.docker.image=genepattern/comparativemarkerselection:v10.4-pre.2
+
+commandLine=java <java_flags> -Dlibdir\=<libdir> -cp /opt/genepattern/modules/ComparativeMarkerSelection/colt.jar\:/opt/genepattern/modules/ComparativeMarkerSelection/commons-math-1.2.jar\:/opt/genepattern/modules/ComparativeMarkerSelection/gp-modules.jar\:/opt/genepattern/modules/ComparativeMarkerSelection/Jama-1.0.2.jar\:/opt/genepattern/modules/ComparativeMarkerSelection/jsci-core.jar\:/opt/genepattern/modules/ComparativeMarkerSelection/trove.jar org.broadinstitute.marker.MarkerSelection <input.file> <cls.file> <number.of.permutations> <test.direction> <output.filename> <balanced> <complete> no <test.statistic> <random.seed> false <smooth.p.values> -l<log.transformed.data> -m<min.std> -c<confounding.variable.cls.file> -p<phenotype.test>
 
 privacy=public
 publicationDate=02/01/2016 13\:40 
 quality=preproduction
 taskType=Gene List Selection
 userid=
-version=Updated commandLine to use java; set job.docker.image='genepattern/docker-r-2-5:0.1'
+version=Moved jar files into the container
 
 cpuType=any
 taskDoc=doc.html
@@ -16,7 +17,7 @@ description=Identify differentially expressed genes that can discriminate betwee
 fileFormat=Comparative Marker Selection
 JVMLevel=1.5, 2.5.0
 language=Java, R
-LSID=urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00044:10.2
+LSID=urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00044:10.4
 name=ComparativeMarkerSelection
 os=any
 

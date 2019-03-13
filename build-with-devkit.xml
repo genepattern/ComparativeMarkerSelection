@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ComparativeMarkerSelection"
+    default="mod-devkit-default"
+>
+    <property name="mdk.dir" location="${basedir}/module-devkit/" />
+    <import file="${mdk.dir}/build-module.xml" as="mdk" />
+</project>

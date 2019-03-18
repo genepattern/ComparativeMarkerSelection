@@ -26,6 +26,61 @@
         </sequential>
     </macrodef>
 
+    <!--
+      Macrodef: exec-cmd, run the command with optional dry-run handling.
+    -->
+    <macrodef name="exec-cmd">
+        <attribute name="executable" />
+        <attribute name="dir" default="${basedir}" />
+        <attribute name="dry-run" default="${dry-run}" />
+        <attribute name="pad" default="    " />
+        <element name="exec-args" implicit="yes" />
+        <sequential>
+            <!-- if dry run, echo the command line -->
+            <echo if:true="@{dry-run}" message="(dry-run)" />
+            <exec executable="echo" if:true="@{dry-run}">
+                <arg value="@{pad}" />
+                <arg value="@{executable}" />
+                <exec-args />
+            </exec>
+            <!-- by default, run the command -->
+            <exec executable="@{executable}" dir="@{dir}" unless:true="@{dry-run}" >
+                <exec-args />
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <!-- 
+      Convenience target to set the dry-run flag from the command line
+      Usage:
+          ant dry-run {actual-target}
+          
+      Note: You must implement dry-run into your targets and tasks.
+      See the 'exec-cmd' macrodef for an example.
+    -->
+    <target name="dry-run" 
+        description="set dry-run flag, e.g. ant dry-run build-image"
+    >
+        <property name="dry-run" value="true" />
+    </target>
+
+    <!--
+      debug 'dry-run' target
+      Usage:
+        ant dry-run         test-dry-run
+        ant -Ddry-run=true  test-dry-run
+        ant -Ddry-run=false test-dry-run
+        ant -Ddry-run=""    test-dry-run
+    -->
+    <target name="debug-dry-run"
+        description="debug 'dry-run' target"
+    >
+        <echo     if:set="dry-run"     >'dry-run' is set, dry-run='${dry-run}'</echo>
+        <echo unless:set="dry-run"     >'dry-run' is not set</echo>
+        <echo     if:true="${dry-run}" >'dry-run' is true</echo>
+        <echo unless:true="${dry-run}" >'dry-run' is not true</echo>
+    </target>
+
     <target name="mod-devkit-default" depends="help" 
         description="by default run the 'help' target"
     />
@@ -103,12 +158,12 @@
 
     <!--
       Build the local docker image
-      --><?code
+    --><?code
       Examples:
         docker build -f Dockerfile . --tag comparativemarkerselection
         docker build -f Dockerfile . --tag comparativemarkerselection:v10.2
         docker build -f Dockerfile . --tag genepattern/comparativemarkerselection:v10.2
-      ?>
+    ?>
     <target name="build-image" depends="init" if="dockerfile.exists"
         description="build the docker image from the 'docker.file' (default: ./docker/Dockerfile)"
     >
@@ -118,9 +173,9 @@
 
       <fail unless="job.docker.image" message="Missing required property: job.docker.image" />
 
-      <exec executable="docker" dir="${docker.dir}" >
-          <arg line="build -f ${docker.file} . --tag ${job.docker.image}" />
-      </exec>
+      <exec-cmd executable="docker" dir="${docker.dir}" >
+        <arg line="build -f ${docker.file} . --tag ${job.docker.image}" />
+      </exec-cmd>
     </target>
 
     <!-- 

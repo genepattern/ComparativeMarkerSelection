@@ -1,5 +1,10 @@
 .DS_Store
 *~
+# eclipse thing
+.project
+
+# ignore local copy of zip files
+archive/
 
 # ignore the 'build' directory
 build/

@@ -37,24 +37,25 @@
         <attribute name="executable" />
         <attribute name="dir" default="${basedir}" />
         <attribute name="failonerror" default="false" />
+        <attribute name="outputproperty" default="" />
         <attribute name="dry-run" default="${dry-run}" />
         <element name="exec-args" implicit="yes" />
 
         <sequential> 
             <!-- if dry-run, echo the command line -->
-            <local name="cmd.out" />
+            <local name="dry-run.out" />
             <exec if:true="@{dry-run}" 
-                executable="echo" outputproperty="cmd.out"
+                executable="echo" outputproperty="dry-run.out"
             >
                 <arg value="@{executable}" />
                 <exec-args />
             </exec>
             <echo if:true="@{dry-run}" 
-                message="(dry-run)${line.separator}${cmd.out}" />
+                message="(dry-run)${line.separator}${dry-run.out}" />
 
             <!-- by default, run the command -->
             <exec unless:true="@{dry-run}" 
-                executable="@{executable}" dir="@{dir}" failonerror="@{failonerror}" 
+                executable="@{executable}" dir="@{dir}" failonerror="@{failonerror}" outputproperty="@{outputproperty}"
             >
                 <exec-args />
             </exec>
@@ -70,7 +71,7 @@
       See the 'exec-cmd' macrodef for an example.
     -->
     <target name="dry-run" 
-        description="set dry-run flag, e.g. ant dry-run build-image"
+        description="set dry-run flag, e.g. ant dry-run build-docker-image"
     >
         <property name="dry-run" value="true" />
     </target>
@@ -172,7 +173,7 @@
         docker build -f Dockerfile . --tag comparativemarkerselection:v10.2
         docker build -f Dockerfile . --tag genepattern/comparativemarkerselection:v10.2
     ?>
-    <target name="build-image" depends="init" if="dockerfile.exists"
+    <target name="build-docker-image" depends="init" if="dockerfile.exists"
         description="build the docker image from the 'docker.file' (default: ./docker/Dockerfile)"
     >
         <fail unless="docker.file" message="Missing required property: docker.file" />
@@ -181,7 +182,7 @@
 
         <fail unless="job.docker.image" message="Missing required property: job.docker.image" />
 
-        <exec-cmd executable="docker" dir="${docker.dir}" >
+        <exec-cmd executable="docker" dir="${docker.dir}" outputproperty="docker.cmd.out" >
             <arg value="build" />
             <arg value="-f" />
             <arg value="${docker.file}" />
@@ -189,6 +190,7 @@
             <arg value="--tag" /> 
             <arg value="${job.docker.image}" />
         </exec-cmd>
+        <echo>${docker.cmd.out}</echo>
     </target>
 
     <!-- 
@@ -387,7 +389,7 @@
     </target>
     
     <!--
-      informational target, show details about the git tag for the module
+      informational target, show details about the git tag for the module.
       
       Links:
         * https://git-scm.com/docs/gitrevisions
@@ -400,7 +402,7 @@
       ?>
     <!-- -->
     <target name="show-git-tag" depends="init"
-        description="show git tag information"
+        description="show git tags"
     >
         <git-exec><args>
             <arg value="show-ref" />

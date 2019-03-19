@@ -27,24 +27,36 @@
     </macrodef>
 
     <!--
-      Macrodef: exec-cmd, run the command with optional dry-run handling.
+      Macrodef: exec-cmd, run the command, 
+        with special handling for the 'dry-run' flag.
+      When 'dry-run' is set echo the command instead of running it.
+      Note: This does not wrap the args in quotes. 
+      For more verbose output use the '-v' (-verbose) command line arg.
     -->
     <macrodef name="exec-cmd">
         <attribute name="executable" />
         <attribute name="dir" default="${basedir}" />
+        <attribute name="failonerror" default="false" />
         <attribute name="dry-run" default="${dry-run}" />
         <attribute name="pad" default="    " />
         <element name="exec-args" implicit="yes" />
-        <sequential>
-            <!-- if dry run, echo the command line -->
-            <echo if:true="@{dry-run}" message="(dry-run)" />
-            <exec executable="echo" if:true="@{dry-run}">
-                <arg value="@{pad}" />
+
+        <sequential> 
+            <!-- if dry-run, echo the command line -->
+            <local name="cmd.out" />
+            <exec if:true="@{dry-run}" 
+                executable="echo" outputproperty="cmd.out"
+            >
                 <arg value="@{executable}" />
                 <exec-args />
             </exec>
+            <echo if:true="@{dry-run}" 
+                message="(dry-run)${line.separator}${cmd.out}" />
+
             <!-- by default, run the command -->
-            <exec executable="@{executable}" dir="@{dir}" unless:true="@{dry-run}" >
+            <exec unless:true="@{dry-run}" 
+                executable="@{executable}" dir="@{dir}" failonerror="@{failonerror}" 
+            >
                 <exec-args />
             </exec>
         </sequential>
@@ -72,9 +84,7 @@
         ant -Ddry-run=false test-dry-run
         ant -Ddry-run=""    test-dry-run
     -->
-    <target name="debug-dry-run"
-        description="debug 'dry-run' target"
-    >
+    <target name="debug-dry-run">
         <echo     if:set="dry-run"     >'dry-run' is set, dry-run='${dry-run}'</echo>
         <echo unless:set="dry-run"     >'dry-run' is not set</echo>
         <echo     if:true="${dry-run}" >'dry-run' is true</echo>
@@ -167,15 +177,20 @@
     <target name="build-image" depends="init" if="dockerfile.exists"
         description="build the docker image from the 'docker.file' (default: ./docker/Dockerfile)"
     >
-      <fail unless="docker.file" message="Missing required property: docker.file" />
-      <available file="${docker.file}" property="dockerfile.exists" />
-      <fail unless="dockerfile.exists" message="Missing required file: '${docker.file}' does not exist" />
+        <fail unless="docker.file" message="Missing required property: docker.file" />
+        <available file="${docker.file}" property="dockerfile.exists" />
+        <fail unless="dockerfile.exists" message="Missing required file: '${docker.file}' does not exist" />
 
-      <fail unless="job.docker.image" message="Missing required property: job.docker.image" />
+        <fail unless="job.docker.image" message="Missing required property: job.docker.image" />
 
-      <exec-cmd executable="docker" dir="${docker.dir}" >
-        <arg line="build -f ${docker.file} . --tag ${job.docker.image}" />
-      </exec-cmd>
+        <exec-cmd executable="docker" dir="${docker.dir}" >
+            <arg value="build" />
+            <arg value="-f" />
+            <arg value="${docker.file}" />
+            <arg value="." />
+            <arg value="--tag" /> 
+            <arg value="${job.docker.image}" />
+        </exec-cmd>
     </target>
 
     <!-- 
@@ -237,9 +252,9 @@
         <attribute name="dir" default="${basedir}" />
         <element name="args" />
         <sequential>
-            <exec executable="git" dir="@{dir}" failonerror="true">
+            <exec-cmd executable="git" dir="@{dir}" failonerror="true">
                 <args />
-            </exec>
+            </exec-cmd>
         </sequential>
     </macrodef>
     
@@ -295,11 +310,12 @@
     </macrodef>
 
     <target name="prompt-for-message" depends="init">
-        <input message="Please enter tag: 'git tag -a ${tag} -m ${message}'"
+        <echo message="Promting for 'git tag -a {tag} -m {message}" />
+        <input message="Please enter tag:"
             addproperty="git.tag"
             defaultvalue="${tag}"
         />
-        <input message="Please enter message: 'git tag -a ${tag} -m ${message}'"
+        <input message="Please enter message:"
             addproperty="git.message"
             defaultvalue="${manifest.version}"
         />

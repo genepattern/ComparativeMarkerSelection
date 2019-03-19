@@ -38,7 +38,6 @@
         <attribute name="dir" default="${basedir}" />
         <attribute name="failonerror" default="false" />
         <attribute name="dry-run" default="${dry-run}" />
-        <attribute name="pad" default="    " />
         <element name="exec-args" implicit="yes" />
 
         <sequential> 
@@ -249,9 +248,10 @@
     -->
     <macrodef name="git-exec">
         <attribute name="dir" default="${basedir}" />
+        <attribute name="failonerror" default="true" />
         <element name="args" />
         <sequential>
-            <exec-cmd executable="git" dir="@{dir}" failonerror="true">
+            <exec-cmd executable="git" dir="@{dir}" failonerror="@{failonerror}">
                 <args />
             </exec-cmd>
         </sequential>
@@ -325,25 +325,10 @@
     <target name="git-tag" depends="init, prompt-for-message"
         description="tag this repository"
     >
+        <!-- create the git tag localy -->
         <git-tag-local tag="${git.tag}" message="${git.message}" />
+        <!-- push the tag to the remote repo -->
         <git-tag-remote tag="${git.tag}" />
-    </target>
-    
-    <target name="createGitTag">
-        <!--Create the Github tag -->
-        <exec executable="git" dir="${module.src.dir}" failonerror="true">
-            <arg value="tag"/>
-            <arg value="-a"/>
-            <arg value="${gitTag}"/>
-            <arg value="-m"/>
-            <arg value="${version}"/>
-        </exec>
-
-        <!-- push the tag to remote Github repo-->
-        <exec executable="git" dir="${module.src.dir}" failonerror="true">
-            <arg value="push"/>
-            <arg value="--tag"/>
-        </exec>
     </target>
 
     <!-- 
@@ -362,9 +347,6 @@
         [prereleaseModule | releaseModule]
     -->
 
-    <!--
-      for debugging the Module Developmet Kit ant targets
-    -->
     <target name="help" depends="init"
         description="show Module Development Kit help message"
     >
@@ -404,6 +386,32 @@
         
     </target>
     
+    <!--
+      informational target, show details about the git tag for the module
+      
+      Links:
+        * https://git-scm.com/docs/gitrevisions
+        * https://git-scm.com/docs/git-show-ref
+        * https://stackoverflow.com/questions/15472107/when-listing-git-ls-remote-why-theres-after-the-tag-name
+        
+      Examples:--><?code
+        git show-ref --tags
+        git ls-remote --tags
+      ?>
+    <!-- -->
+    <target name="show-git-tag" depends="init"
+        description="show git tag information"
+    >
+        <git-exec><args>
+            <arg value="show-ref" />
+            <arg value="--tags" />
+        </args></git-exec>
+
+    </target>
+
+    <!--
+      for debugging
+    -->
     <target name="debug" depends="init"> 
         <echoproperties />
     </target> 

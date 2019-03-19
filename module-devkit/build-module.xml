@@ -126,7 +126,6 @@
     <!-- initialize properties from the manifest file -->
     <target name="init-manifest" depends="init-core">
         <property file="${manifest.file}" prefix="manifest" />
-        <echo-value pname="manifest.version" />
     </target>
     
     <target name="init-local-server">
@@ -141,7 +140,7 @@
             <entry key="LSID" value="${LSID}" />
         </propertyfile>
     </target>
-    
+
     <!-- add or edit 'job.docker.image' in the manifest file -->
     <target name="set-docker-image" if:set="job.docker.image"
     >
@@ -397,6 +396,11 @@
         <echo-value pad="    " pname="LSID" />
         <echo-value pad="    " pname="dockerhub.organization" />
         <echo-value pad="    " pname="job.docker.image" />
+        <echo> 
+--------------------
+  manifest.properties
+--------------------</echo>
+        <echo-value pname="manifest.version" />
         
     </target>
     

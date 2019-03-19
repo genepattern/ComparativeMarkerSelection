@@ -9,7 +9,7 @@ publicationDate=02/01/2016 13\:40
 quality=preproduction
 taskType=Gene List Selection
 userid=
-version=Moved jar files into the container
+version=Moved jar files into the container, built with mod-devkit
 
 cpuType=any
 taskDoc=doc.html

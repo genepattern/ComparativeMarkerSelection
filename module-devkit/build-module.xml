@@ -37,7 +37,7 @@
         <attribute name="executable" />
         <attribute name="dir" default="${basedir}" />
         <attribute name="failonerror" default="false" />
-        <attribute name="outputproperty" default="" />
+        <!-- attribute name="outputproperty" default="" / -->
         <attribute name="dry-run" default="${dry-run}" />
         <element name="exec-args" implicit="yes" />
 
@@ -55,7 +55,7 @@
 
             <!-- by default, run the command -->
             <exec unless:true="@{dry-run}" 
-                executable="@{executable}" dir="@{dir}" failonerror="@{failonerror}" outputproperty="@{outputproperty}"
+                executable="@{executable}" dir="@{dir}" failonerror="@{failonerror}" 
             >
                 <exec-args />
             </exec>
@@ -107,7 +107,7 @@
         <!-- the location of the taskLib files -->
         <property name="module.dir" location="module" />
         <!-- the location of the manifest file -->
-        <property name="manifest.file" location="manifest" />
+        <property name="manifest.file" location="${module.dir}/manifest" />
         <!-- the location of the docker files -->
         <property name="docker.dir" location="docker" />
         <property name="docker.file" location="${docker.dir}/Dockerfile" />
@@ -182,7 +182,7 @@
 
         <fail unless="job.docker.image" message="Missing required property: job.docker.image" />
 
-        <exec-cmd executable="docker" dir="${docker.dir}" outputproperty="docker.cmd.out" >
+        <exec-cmd executable="docker" dir="${docker.dir}" >
             <arg value="build" />
             <arg value="-f" />
             <arg value="${docker.file}" />
@@ -190,7 +190,6 @@
             <arg value="--tag" /> 
             <arg value="${job.docker.image}" />
         </exec-cmd>
-        <echo>${docker.cmd.out}</echo>
     </target>
 
     <!-- 

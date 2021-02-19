@@ -8,6 +8,7 @@ privacy=public
 publicationDate=02/01/2016 13\:40 
 quality=preproduction
 taskType=Gene List Selection
+categories=differential expression;gene list selection
 userid=
 version=Moved jar files into the container, built with mod-devkit
 

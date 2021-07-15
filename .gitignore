@@ -3,6 +3,9 @@
 # eclipse thing
 .project
 
+# PyCharm files
+.idea/
+
 # ignore local copy of zip files
 archive/
 

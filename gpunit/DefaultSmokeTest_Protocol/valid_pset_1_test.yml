@@ -1,7 +1,7 @@
-#lsid=urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00044:9.1
+#lsid=urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00044:10.5
 #
 name: ComparativeMarkerSelection - Valid Parameter Set 1
-description: (no description)
+description: default test for ComparativeMarkerSelection
 module: ComparativeMarkerSelection
 params:
     input.file: "../input/all_aml_test.gct"
@@ -19,4 +19,9 @@ params:
     phenotype.test: "one versus all"
     output.filename: "<input.file_basename>.default.comp.marker.odf"
 assertions:
-    jobStatus: success
+    # jobStatus: success
+    diffCmd: diff <%gpunit.diffStripTrailingCR%> -q
+        files:
+            "all_aml_test.default.comp.marker.odf":
+                diff: "output/all_aml_test.comp.marker.odf"
+

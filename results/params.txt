@@ -1,1 +1,0 @@
-ComparativeMarkerSelection(input filename=miGCM_expressed.gct , cls filename=miGCM_218.mal.slice.cls , confounding variable cls filename=miGCM_218.tt.slice.cls , test direction=2, test statistic=4, min std=0.75, number of permutations=74800, complete=false, balanced=false, random seed=5555555, output file=miGCM_marker_results)

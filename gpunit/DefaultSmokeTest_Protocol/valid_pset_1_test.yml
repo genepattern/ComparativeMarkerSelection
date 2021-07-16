@@ -1,6 +1,6 @@
 #lsid=urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00044:10.5
 #
-name: ComparativeMarkerSelection - Valid Parameter Set 1
+name: "ComparativeMarkerSelection - Valid Parameter Set 1"
 description: default test for ComparativeMarkerSelection
 module: ComparativeMarkerSelection
 params:
@@ -20,7 +20,7 @@ params:
     output.filename: "<input.file_basename>.default.comp.marker.odf"
 assertions:
     # jobStatus: success
-    diffCmd: diff <%gpunit.diffStripTrailingCR%> -q
+    # diffCmd: diff <%gpunit.diffStripTrailingCR%> -q
     files:
         "all_aml_test.default.comp.marker.odf":
             diff: "../output/all_aml_test.comp.marker.odf"

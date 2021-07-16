@@ -6,10 +6,10 @@ module: ComparativeMarkerSelection
 params:
     input.file: "../input/all_aml_test.gct"
     cls.file: "../input/all_aml_test.cls"
-    confounding.variable.cls.file: 
+    confounding.variable.cls.file: ""
     test.direction: "2 Sided"
     test.statistic: "T-Test"
-    min.std: 
+    min.std: ""
     number.of.permutations: "10000"
     log.transformed.data: "no"
     complete: "no"

@@ -21,7 +21,7 @@ params:
 assertions:
     # jobStatus: success
     diffCmd: diff <%gpunit.diffStripTrailingCR%> -q
-        files:
-            "all_aml_test.default.comp.marker.odf":
-                diff: "../output/all_aml_test.comp.marker.odf"
+    files:
+        "all_aml_test.default.comp.marker.odf":
+            diff: "../output/all_aml_test.comp.marker.odf"
 

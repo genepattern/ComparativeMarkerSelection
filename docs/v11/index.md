@@ -114,7 +114,7 @@ Requires the [genepattern/comparativemarkerselection:v10.5 Docker image](https:/
 
 | Version | Release Date | Description                                 |
 ----------|--------------|---------------------------------------------|
-| 11 | 2021-07-20 | Updated to run in its own Docker container - allowing p values to be computed |
+| 11 | 2021-07-20 | Updated to run in its own Docker container - allowing q values to be computed |
 | 10 | 2013-12-04 | Updated to html doc |
 | 9 | 2012-03-26 | Changed default number of permutations to 10000 |
 | 8 | 2011-08-30 | added parameter to specify whether data is log transformed |

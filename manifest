@@ -202,4 +202,4 @@ src.repo=https\://github.com/genepattern/ComparativeMarkerSelection/tree/v11
 taskDoc=doc.html
 taskType=gene list selection
 userid=bhill@broadinstitute.org
-version=Updated to run in its own container
+version=Updated to run in its own container - allowing q values to be computed.

@@ -7,6 +7,7 @@
     <antcall target="prezip"/>
     <zip destfile="${dest.dir}/${ant.project.name}.zip" whenempty="fail" defaultexcludes="true">
         <fileset dir="." includes="manifest, Dockerfile, LICENSE"/>
+        <fileset dir="src" includes="qvalue.R" />
     </zip>
     <antcall target="postzip"/>
 </target>

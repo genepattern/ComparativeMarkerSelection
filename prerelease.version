@@ -1,2 +1,10 @@
+#prerelease version number
+#Thu, 22 Jul 2021 11:58:05 -0400
+#updated after building 10.6
+#Mon, 19 Jul 2021 16:35:05 -0400
+#updated after building 10.4
+#Fri, 15 Feb 2019 13:29:21 -0500
+#updated after building 10.3
+#Thu, 14 Feb 2019 00:43:21 -0500
 #prerelease version number after manual edit
-prerelease.number=2
+prerelease.number=1

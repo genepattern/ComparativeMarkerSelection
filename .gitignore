@@ -1,0 +1,16 @@
+.DS_Store
+*~
+# eclipse thing
+.project
+
+# PyCharm files
+.idea/
+
+# ignore local copy of zip files
+archive/
+
+# ignore the 'build' directory
+build/
+
+# ignore the 'reports' directory
+reports/

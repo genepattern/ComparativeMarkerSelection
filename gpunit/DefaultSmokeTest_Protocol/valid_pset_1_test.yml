@@ -1,0 +1,25 @@
+#lsid=urn:lsid:broad.mit.edu:cancer.software.genepattern.module.analysis:00044:10.5
+#
+name: "ComparativeMarkerSelection - Valid Parameter Set 1"
+description: default test for ComparativeMarkerSelection
+module: ComparativeMarkerSelection
+params:
+    input.file: "../input/all_aml_test.gct"
+    cls.file: "../input/all_aml_test.cls"
+    confounding.variable.cls.file: ""
+    test.direction: "2 Sided"
+    test.statistic: "T-Test"
+    min.std: ""
+    number.of.permutations: "10000"
+    log.transformed.data: "no"
+    complete: "no"
+    balanced: "no"
+    random.seed: "779948241"
+    smooth.p.values: "yes"
+    phenotype.test: "one versus all"
+    output.filename: "<input.file_basename>.default.comp.marker.odf"
+assertions:
+    files:
+        "all_aml_test.default.comp.marker.odf":
+            diff: "../output/all_aml_test.comp.marker.odf"
+
